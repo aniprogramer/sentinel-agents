@@ -4,7 +4,7 @@ from sandbox_runner import run_exploit_in_sandbox
 import requests
 import json
 import glob
-
+import datetime
 # ==========================================
 # 🛑 MOCKS (Blue Team is next to be replaced!)
 # ==========================================
@@ -54,10 +54,28 @@ def call_red_team_api(vulnerability_description, vulnerable_code):
         
     return response.json()
 
+def call_blue_team_api(vulnerable_code, vulnerability_description, failure_logs):
+    """Hits the Checkpoint 3/4 FastAPI endpoint."""
+    url = "http://127.0.0.1:8000/generate_patch"
+    payload = {
+        "vulnerable_code": vulnerable_code,
+        "vulnerability": vulnerability_description, 
+        "failure_logs": failure_logs
+    }
+    response = requests.post(url, json=payload)
+    
+    if response.status_code != 200:
+        print(f"\n❌ [FATAL] Blue Team API crashed with status {response.status_code}!")
+        print(f"Server Logs: {response.text}")
+        exit(1)
+        
+    return response.json()
+
 
 # ==========================================
 # 🚀 THE MASTER SECURITY LOOP
 # ==========================================
+
 def run_autonomous_pipeline(target_file_path, existing_auditor_results=None):
     print("\n" + "="*50)
     print(f"🛡️ VEXSTORM AUTONOMOUS ENGINE STARTED")
@@ -80,16 +98,32 @@ def run_autonomous_pipeline(target_file_path, existing_auditor_results=None):
         print(f"\n[🚨 AUDITOR REPORT]\n{json.dumps(auditor_results, indent=2)}")
         time.sleep(1)
 
-    # 4. RED TEAM (Live AI Checkpoint 2)
+        print(f"\n[🚨 AUDITOR REPORT]\n{json.dumps(auditor_results, indent=2)}")
+        time.sleep(1)
+
+    # ==========================================
+    # 🔀 THE LOGICAL 'AND' GATE
+    # ==========================================
+    print("\n[🔀 AND GATE] Evaluating AST Context + Auditor Findings...")
+    
+    # If there are no Red Team findings, the AND gate closes!
+    if not auditor_results.get("red_team_findings"):
+        print("❌ [🔀 AND GATE] No dynamically exploitable logic found. Halting Red Team execution.")
+        print("\n🏁 PIPELINE COMPLETE.\n")
+        return # Exits the pipeline early so Docker doesn't spin up!
+
+    print("✅ [🔀 AND GATE] Exploitable logic confirmed. Triggering Red Team!")
+    time.sleep(1)
+
     # 4. RED TEAM (Live AI Checkpoint 2)
     print("\n[💀 RED TEAM] Analyzing logic & generating custom PoE script...")
+   
     
     # Grab the top finding to feed to the Red Team
     vuln_desc = "Unknown vulnerability"
     if auditor_results.get("red_team_findings"):
         vuln_desc = auditor_results["red_team_findings"][0]
 
-    # The AI writes the exploit script dynamically!
     red_team_results = call_red_team_api(
         vulnerability_description=vuln_desc,
         vulnerable_code=original_code
@@ -97,7 +131,7 @@ def run_autonomous_pipeline(target_file_path, existing_auditor_results=None):
     poe_script = red_team_results.get("exploit_script", "")
     print(f"[*] AI generated a {len(poe_script)} character Python exploit script.")
     
-    # 👇 ADD THESE TWO LINES RIGHT HERE 👇
+  
     print("\n[🔍 EXPLOIT PAYLOAD REVEALED]")
     print(poe_script)
     time.sleep(1)
@@ -111,27 +145,54 @@ def run_autonomous_pipeline(target_file_path, existing_auditor_results=None):
     print(f"📜 LOGS:\n{result_run_1['logs'].strip()}")
     print("-"*30)
 
-    # 6. VERIFICATION & PATCHING (Checkpoint 3 & 4)
+
+    # 6. VERIFICATION & PATCHING (The Iterative Combat Loop)
     if result_run_1['success']:
-        print("\n[🛡️ BLUE TEAM] Vulnerability confirmed! Generating patch...")
-        patched_code = mock_blue_team(original_code, result_run_1['logs'])
-        time.sleep(1)
+        print("\n[🛡️ BLUE TEAM] Vulnerability confirmed! Initiating iterative patching...")
+        
+        max_retries = 3
+        attempt = 1
+        current_logs = result_run_1['logs']
+        is_patched = False
 
-        print("[⚖️ VERIFIER] Applying patch and re-testing in Sandbox...")
-        apply_patch(target_file_path, patched_code)
+        while attempt <= max_retries:
+            print(f"\n--- 🛠️ Patch Attempt {attempt}/{max_retries} ---")
+            
+            # Call the live AI Blue Team using the latest crash logs
+            blue_team_results = call_blue_team_api(
+                vulnerable_code=original_code,
+                vulnerability_description=vuln_desc,  # <-- Just fix this keyword argument!
+                failure_logs=current_logs
+            )
+            patched_code = blue_team_results.get("patched_code", "")
+            print(f"\n[🛠️ BLUE TEAM PATCH REVEALED]")
+            print(patched_code)
+            
+            print("[⚖️ VERIFIER] Applying patch and re-testing in Sandbox...")
+            apply_patch(target_file_path, patched_code)
 
-        result_run_2 = run_exploit_in_sandbox(poe_script, target_file_path)
+            # Re-run the exact same Red Team exploit against the new patch
+            result_run_verification = run_exploit_in_sandbox(poe_script, target_file_path)
 
-        if not result_run_2['success'] or "Bypass successful" not in result_run_2['logs']:
-            print("\n✅ [VERDICT] Patch Verified! Exploit neutralized.")
-        else:
-            print("\n❌ [VERDICT] Patch Failed. Exploit still works.")
+            # Check if the Red Team was stopped
+            if not result_run_verification['success'] or "Bypass successful" not in result_run_verification['logs']:
+                print(f"\n✅ [VERDICT] Patch Verified on attempt {attempt}! Exploit neutralized.")
+                is_patched = True
+                break  # Exit the loop, the code is safe!
+            else:
+                print(f"❌ [VERDICT] Patch Failed. Red Team bypassed the fix.")
+                # Update the logs so the Blue Team learns from this specific failure on the next loop
+                current_logs = result_run_verification['logs'] 
+                attempt += 1
+                time.sleep(1) # Give the APIs a brief rest
 
+        if not is_patched:
+            print(f"\n🚨 [VERDICT] Blue Team failed to secure the code after {max_retries} attempts. Human intervention required!")
+
+        # Always restore original code at the end of the test run
         apply_patch(target_file_path, original_code)
     else:
         print("\n✅ [VERDICT] Code is secure against this attack vector.")
-
-    print("\n🏁 PIPELINE COMPLETE.\n")
 
 
 # ==========================================

