@@ -83,9 +83,9 @@ if __name__ == "__main__":
     import json
     import os
 
-    file_path = os.path.join("test_files", "sample_vulnerable.py")
+    file_path = os.path.join("..", "test_files", "sample_vulnerable.py")
 
-    with open(r"C:\Users\ANIKET\Desktop\Vexstrom Hackathon\main_repo\sentinel-agents\backend\test_files\sample_vulnerable.py", "r", encoding="utf-8") as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         code = f.read()
 
     result = analyze_code(code)
