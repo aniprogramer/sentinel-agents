@@ -1,0 +1,10 @@
+{
+    "65b6ed89c30dba6f1091f01a3e71a3cb5e35972004e89f2b291f24eabc37f31b": {
+        "success": true,
+        "logs": "Exploit running inside Docker!\nTarget directory contents: ['sample_vuln.py']\n"
+    },
+    "890dc9f23a585bdac4fe6db4931a88dae9ee285883fc969b7df5c10707647365": {
+        "success": true,
+        "logs": "--- RED TEAM EXPLOIT EXECUTING ---\nSimulating SQL Injection payload...\nBypass successful. Data extracted.\n"
+    }
+}
