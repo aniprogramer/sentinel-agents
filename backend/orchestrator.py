@@ -58,7 +58,7 @@ def run_autonomous_pipeline(target_file_path):
 
     # 3. AUDITOR (Member 2 - Checkpoint 1)
     print("[🔍 AUDITOR] Scanning for surface vulnerabilities...")
-    auditor_results = mock_auditor(original_code, ast_context)
+    auditor_results = call_auditor_api(original_code, ast_context)
     time.sleep(1)
 
     # 4. RED TEAM (Member 2 - Checkpoint 2)
@@ -69,7 +69,7 @@ def run_autonomous_pipeline(target_file_path):
     # 5. SANDBOX EXECUTION (Your Engine)
     print("\n[🐳 ORCHESTRATOR] Sending exploit to Docker Sandbox...")
     result_run_1 = run_exploit_in_sandbox(poe_script, target_file_path)
-    
+
     print("\n" + "-"*30)
     print(f"🛑 RED TEAM EXPLOIT SUCCESS: {result_run_1['success']}")
     print(f"📜 LOGS:\n{result_run_1['logs'].strip()}")
@@ -83,15 +83,15 @@ def run_autonomous_pipeline(target_file_path):
 
         print("[⚖️ VERIFIER] Applying patch and re-testing in Sandbox...")
         apply_patch(target_file_path, patched_code)
-        
+
         # Re-run the EXACT SAME exploit against the patched code
         result_run_2 = run_exploit_in_sandbox(poe_script, target_file_path)
-        
+
         if not result_run_2['success'] or "Bypass successful" not in result_run_2['logs']:
             print("\n✅ [VERDICT] Patch Verified! Exploit neutralized.")
         else:
             print("\n❌ [VERDICT] Patch Failed. Exploit still works.")
-            
+
         # Restore original code for the next test run
         apply_patch(target_file_path, original_code)
     else:
