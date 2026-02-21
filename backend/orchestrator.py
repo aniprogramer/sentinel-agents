@@ -5,6 +5,10 @@ import requests
 import json
 import glob
 import datetime
+import sys
+# Add the ast_engine folder to the system path so Python can find it
+sys.path.append(os.path.join(os.path.dirname(__file__), 'ast_engine'))
+from analyzer import analyze_code
 # ==========================================
 # 🛑 MOCKS (Blue Team is next to be replaced!)
 # ==========================================
@@ -22,6 +26,7 @@ def apply_patch(target_file, patched_code):
 # ==========================================
 # 🌐 API CONNECTORS
 # ==========================================
+
 def call_auditor_api(raw_code, ast_json):
     """Hits the Checkpoint 1 FastAPI endpoint."""
     url = "http://127.0.0.1:8000/analyze"
@@ -90,7 +95,7 @@ def run_autonomous_pipeline(target_file_path, existing_auditor_results=None):
         auditor_results = existing_auditor_results
     else:
         print("\n[⚙️ MEMBER 1] Extracting AST Context...")
-        ast_context = mock_ast_analyzer(original_code)
+        ast_context = analyze_code(original_code)
         time.sleep(1)
 
         print("[🔍 AUDITOR] Scanning for surface vulnerabilities...")
@@ -225,7 +230,7 @@ def scan_entire_repository(repo_path):
         if ".env" in file_path:
             ast_context = {"type": "configuration_file", "warning": "Contains environment variables"}
         else:
-            ast_context = mock_ast_analyzer(file_content) 
+            ast_context = analyze_code(file_content) 
 
         auditor_results = call_auditor_api(file_content, ast_context)
         
