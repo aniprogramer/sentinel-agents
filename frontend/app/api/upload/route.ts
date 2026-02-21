@@ -26,7 +26,15 @@ export async function POST(req: Request) {
 		const suffix = url.pathname.replace(/\/api\/upload/i, '') || '/';
 
 		// normalize suffix to one of allowed endpoints
-		const allowed = ['/', '/webhook/github', '/analyze', '/generate_poe', '/generate_patch', '/verify'];
+		const allowed = [
+			'/',
+			'/webhook/github',
+			'/analyze',
+			'/generate_poe',
+			'/generate_patch',
+			'/verify',
+			'/orchestrator',
+		];
 		let targetPath = '/';
 		if (allowed.includes(suffix)) targetPath = suffix;
 
@@ -72,6 +80,28 @@ export async function POST(req: Request) {
 		if (contentType.includes('application/json')) {
 			jsonBody = await req.json().catch(() => null);
 			if (jsonBody?.action && allowed.includes(`/${jsonBody.action}`)) targetPath = `/${jsonBody.action}`;
+		}
+
+		// Special-case: frontend uses action=analyze to mean "clone repo then run orchestrator".
+		// If repoUrl present and requested action is analyze, call backend /webhook/github first then /orchestrator.
+		if ((action === 'analyze' || jsonBody?.action === 'analyze') && jsonBody?.repoUrl) {
+			const clonePayload = {
+				repository_url: jsonBody.repoUrl,
+				branch: jsonBody.branch ?? 'main',
+				commit_hash: (jsonBody.commitHash as string) ?? 'HEAD',
+			};
+			// attempt clone via webhook endpoint
+			try {
+				await fetch(`${backendBase}/webhook/github`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(clonePayload),
+				});
+			} catch (e) {
+				// ignore clone errors here; orchestrator may still run
+			}
+			targetPath = '/orchestrator';
+			jsonBody = { action: 'run' };
 		}
 
 		// Handle root POST: return helpful message

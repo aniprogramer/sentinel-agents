@@ -10,7 +10,7 @@ import os
 def apply_patch(target_file, patched_code):
     """
     Apply a security patch to a target file.
-    
+
     Args:
         target_file: Path to the file to patch
         patched_code: The patched code content
@@ -23,10 +23,10 @@ def apply_patch(target_file, patched_code):
 def extract_ast_context(code):
     """
     Extract AST context from source code using the AST analyzer.
-    
+
     Args:
         code: The source code to analyze
-        
+
     Returns:
         dict: AST context with functions, sinks, imports, etc.
     """
@@ -39,10 +39,10 @@ def extract_ast_context(code):
 def get_vulnerability_description(auditor_results):
     """
     Extract the primary vulnerability description from auditor results.
-    
+
     Args:
         auditor_results: Results from the auditor API
-        
+
     Returns:
         str: Primary vulnerability description
     """
@@ -55,10 +55,10 @@ def get_vulnerability_description(auditor_results):
 def is_exploitable(auditor_results):
     """
     Check if the auditor found exploitable vulnerabilities.
-    
+
     Args:
         auditor_results: Results from the auditor API
-        
+
     Returns:
         bool: True if exploitable logic was found
     """
@@ -68,10 +68,10 @@ def is_exploitable(auditor_results):
 def is_critical_finding(auditor_results):
     """
     Check if the auditor found critical or high severity issues.
-    
+
     Args:
         auditor_results: Results from the auditor API
-        
+
     Returns:
         bool: True if severity is HIGH or CRITICAL
     """

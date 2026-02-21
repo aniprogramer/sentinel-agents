@@ -1,54 +1,26 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List
 from core.ai_brain import call_ai
 import subprocess
 
+# Schemas moved to backend/schemas
+from schemas.schemas import (
+    AnalyzeInput,
+    AnalyzeOutput,
+    GeneratePOEInput,
+    GeneratePOEOutput,
+    GeneratePatchInput,
+    GeneratePatchOutput,
+    VerifyInput,
+    VerifyOutput,
+    WebhookPayload,
+    OrchestratorInput,
+)
+
+# Orchestrator functions
+from orchestrator import run_autonomous_pipeline, scan_entire_repository
+
 app = FastAPI(title="Sentinel Agents Security Engine")
 
-# ---------- Schemas ----------
-
-class AnalyzeInput(BaseModel):
-    raw_code: str
-    ast_json: dict
-
-class AnalyzeOutput(BaseModel):
-    auditor_findings: List[str]
-    red_team_findings: List[str]
-    severity_score: str
-    attack_surface_summary: str
-
-class GeneratePOEInput(BaseModel):
-    vulnerability_description: str
-    vulnerable_code: str
-
-class GeneratePOEOutput(BaseModel):
-    exploit_script: str
-    execution_instructions: str
-
-class GeneratePatchInput(BaseModel):
-    vulnerability: str
-    failure_logs: str
-
-class GeneratePatchOutput(BaseModel):
-    patched_code: str
-    security_principle: str
-    explanation: str
-
-class VerifyInput(BaseModel):
-    original_vulnerability: str
-    patch_result: str
-    execution_logs: str
-
-class VerifyOutput(BaseModel):
-    exploit_success: bool
-    confidence_level: str
-    final_verdict: str
-
-class WebhookPayload(BaseModel):
-    repository_url: str
-    branch: str
-    commit_hash: str
 
 @app.post("/webhook/github")
 def github_push_receiver(payload: WebhookPayload):
@@ -58,14 +30,44 @@ def github_push_receiver(payload: WebhookPayload):
     # 1. Clone the repo to a temporary folder
     repo_name = payload.repository_url.split("/")[-1].replace(".git", "")
     clone_dir = f"../scans/{repo_name}_{payload.commit_hash[:7]}"
-    
+
     # Run the git clone command (in a real app, use async/background tasks here)
     subprocess.run(["git", "clone", payload.repository_url, clone_dir])
-    
+
     # 2. Trigger the Orchestrator Directory Scan on the new folder
-    # (You would import scan_entire_repository from orchestrator.py here)
-    
+    # Trigger a repository scan using the orchestrator
+    try:
+        scan_entire_repository(clone_dir)
+    except Exception:
+        # if scanning fails immediately, we still return accepted
+        pass
+
     return {"status": "Scan Initiated", "target": clone_dir}
+
+
+@app.post("/orchestrator")
+def orchestrator_controller(input: OrchestratorInput):
+    """Manage orchestrator operations: 'run' or 'scan'.
+
+    - action: 'run' (default) will start the autonomous pipeline
+    - action: 'scan' requires `target` path to scan
+    """
+    action = (input.action or "run").lower()
+    if action == 'scan':
+        if not input.target:
+            return {"success": False, "message": "target required for scan"}
+        try:
+            scan_entire_repository(input.target)
+            return {"success": True, "status": "scan_started", "target": input.target}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
+
+    # default: run the autonomous pipeline
+    try:
+        run_autonomous_pipeline(input.target)
+        return {"success": True, "status": "orchestration_started"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
 
 # ---------- Prompt Templates ----------
 
