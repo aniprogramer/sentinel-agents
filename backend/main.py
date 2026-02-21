@@ -47,10 +47,21 @@ class VerifyOutput(BaseModel):
 # ---------- Prompt Templates ----------
 
 PROMPTS = {
-    "analyze": """Analyze the following code and AST:
-Raw Code: {raw_code}
-AST JSON: {ast_json}
-Return auditor findings, red team findings, severity score, and attack surface summary.""",
+    "analyze": """You are the Lead Security Auditor (Checkpoint 1). 
+Your task is to perform a surface-level Static Application Security Testing (SAST) scan on the provided code and AST.
+
+Raw Code: 
+{raw_code}
+
+AST Context: 
+{ast_json}
+
+INSTRUCTIONS:
+1. Identify immediate surface threats: hardcoded secrets, exposed API keys, dangerous sinks (eval, exec), and missing authentication.
+2. Separate basic findings ("auditor_findings") from complex logic flaws that require an exploit ("red_team_findings" like SQLi or IDOR).
+3. Do not generate code fixes yet. 
+
+Output strictly valid JSON matching the requested schema. Do not include markdown formatting like ```json.""",
 
     "generate_poe": """Given vulnerability description and vulnerable code:
 Description: {vulnerability_description}
