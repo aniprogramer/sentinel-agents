@@ -12,15 +12,21 @@ if os.path.exists(CACHE_FILE):
 else:
     execution_cache = {}
 
-def get_script_hash(script_content):
-    return hashlib.sha256(script_content.encode('utf-8')).hexdigest()
+def get_script_hash(script_content, target_file_path):
+    """Hashes the exploit AND the current state of the target code."""
+    with open(target_file_path, "r") as f:
+        target_code = f.read()
+    # Combine them so if either changes, the cache invalidates
+    combined_state = script_content + target_code
+    return hashlib.sha256(combined_state.encode('utf-8')).hexdigest()    
 
 def save_cache():
     with open(CACHE_FILE, "w") as f:
         json.dump(execution_cache, f, indent=4)
 
 def run_exploit_in_sandbox(script_content, target_file_path):
-    script_hash = get_script_hash(script_content)
+    # Pass BOTH arguments to the hash function now
+    script_hash = get_script_hash(script_content, target_file_path)
     
     if script_hash in execution_cache:
         print("[⚡ CACHE HIT] Bypassing Docker. Returning previous execution logs.")
