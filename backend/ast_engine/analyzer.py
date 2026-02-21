@@ -1,40 +1,9 @@
-from tree_sitter import Parser, Language
-from tree_sitter_python import language as python_capsule
-
-PY_LANGUAGE = Language(python_capsule())
-
-parser = Parser()
-parser.language = PY_LANGUAGE
-
-def extract_functions(node, code_bytes, functions=None):
-    if functions is None:
-        functions = []
-
-    # Only capture top-level functions
-    if node.type == "function_definition" and node.parent.type == "module":
-        name_node = node.child_by_field_name("name")
-        params_node = node.child_by_field_name("parameters")
-
-        function_name = code_bytes[name_node.start_byte:name_node.end_byte].decode("utf-8")
-
-        parameters = []
-        if params_node:
-            for child in params_node.children:
-                if child.type == "identifier":
-                    param_name = code_bytes[child.start_byte:child.end_byte].decode("utf-8")
-                    parameters.append(param_name)
-
-        functions.append({
-            "name": function_name,
-            "parameters": parameters,
-            "start_line": node.start_point[0] + 1,
-            "end_line": node.end_point[0] + 1
-        })
-
-    for child in node.children:
-        extract_functions(child, code_bytes, functions)
-
-    return functions
+from .parser_setup import parser
+from .functions_extractor import extract_functions
+from .classes_extractor import extract_classes
+from .imports_extractor import extract_imports
+from .globals_extractor import extract_global_variables
+from .inputs_extractor import extract_input_sources
 
 
 def analyze_code(code: str):
@@ -46,25 +15,31 @@ def analyze_code(code: str):
     classes = extract_classes(root_node, code_bytes)
     imports = extract_imports(root_node, code_bytes)
     globals_list = extract_global_variables(root_node, code_bytes)
+    input_sources = extract_input_sources(root_node, code_bytes)
 
     return {
         "functions": functions,
         "classes": classes,
         "imports": imports,
-        "global_variables": globals_list
+        "global_variables": globals_list,
+        "input_sources": input_sources
     }
-
 
 if __name__ == "__main__":
     sample_code = """
 import os
+from flask import request
 
 SECRET_KEY = "hardcoded"
-debug = True
+
+class User:
+    def login(self):
+        username = request.args.get("user")
 
 def main():
-    local_var = 10
+    password = input("Enter password")
 """
 
     result = analyze_code(sample_code)
-    print(result)
+    import json
+    print(json.dumps(result, indent=2))
