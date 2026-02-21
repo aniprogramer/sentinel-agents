@@ -5,6 +5,7 @@ An autonomous AI-powered security testing and vulnerability remediation platform
 ## Overview
 
 Sentinel Agents is a multi-agent security system that automatically:
+
 1. **Analyzes** code using AST (Abstract Syntax Tree) parsing
 2. **Audits** for surface-level vulnerabilities
 3. **Generates** exploits (Proof of Exploitation scripts)
@@ -15,28 +16,49 @@ Sentinel Agents is a multi-agent security system that automatically:
 ## Architecture
 
 ```
-┌─────────────────┐
-│   FastAPI App   │  (main.py - REST API)
-└────────┬────────┘
-         │
-    ┌────▼─────┐
-    │ AI Brain │  (Kimi AI Integration)
-    └────┬─────┘
-         │
-┌────────▼──────────────────┐
-│    Orchestrator.py         │  (Master Security Loop)
-├───────────────────────────┤
-│ 1. AST Analyzer           │
-│ 2. Auditor Agent          │
-│ 3. Red Team Agent         │
-│ 4. Sandbox Runner         │
-│ 5. Blue Team Agent        │
-│ 6. Verifier Agent         │
-└───────────────────────────┘
-         │
-    ┌────▼──────────┐
-    │ Docker Sandbox │
-    └───────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       IMPROVED AUTONOMOUS SECURITY FLOW                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 1-2: CONTEXTUAL INGESTION                                              │
+│ • Slicer: Breaks file into logical blocks.                                  │
+│ • Context Map: Stores global variables & function relations.                │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 3-5: PARALLEL DISCOVERY (Checkpoint 1 & 2)                             │
+│ ┌───────────────────────────┐         ┌───────────────────────────────────┐ │
+│ │ Auditor (Surface Scan)    │   AND   │ 	Red Team (Deep Logic Scan)      │ │
+│ │ Secrets & CI/CD Pipelines │         │ 	Reachability & Taint Analysis   │ │
+│ └─────────────┬─────────────┘         └─────────────────┬─────────────────┘ │
+└───────────────┼─────────────────────────────────────────┼───────────────────┘
+                │                                         │
+                ▼                                         ▼
+┌──────────────────────────────┐        ┌─────────────────────────────────────┐
+│ STEP 4: INSTANT INTIMATION   │        │ STEP 6-7: ADVERSARIAL VERIFICATION  │
+│ • Hardcoded fixes for leaks. │        │ • PoE Script Generation (Shell).    │
+│                              │        │ • ISOLATED DOCKER EXECUTION.        |
+└──────────────────────────────┘        └─────────────────┬───────────────────┘
+                                                          │
+                                            ┌─────────────┴─────────────┐
+                                            ▼                           ▼
+                               ┌──────────────────────────┐  ┌───────────────────────┐
+                               │ STEP 8: BLUE TEAM        │  │ STEP 9: VERIFIER      │
+                               │ (Checkpoint 3)           │  │ (Checkpoint 4)        │
+                               │ • Generate Patch based   │  │ • Runs PoE vs Patch.  │
+                               │   on Failure Logs.       │  │ • Feedback Critique.  │
+                               └────────────┬─────────────┘  └──────────────┬────────┘
+                                            │                               │
+                                            └─────CRITIQUE LOOP (Max 3)─────┘
+                                                          │
+                                                          ▼
+                                         ┌───────────────────────────────────┐
+                                         │ FINAL OUTPUT: Verified "Thinking" │
+                                         │ Report + Patch + Verified PoE.    │
+                                         └───────────────────────────────────┘
 ```
 
 ## Components
@@ -44,6 +66,7 @@ Sentinel Agents is a multi-agent security system that automatically:
 ### Core Modules
 
 #### `main.py` - FastAPI REST API
+
 - **Endpoints:**
   - `POST /analyze` - Code vulnerability analysis
   - `POST /generate_poe` - Generate Proof of Exploitation
@@ -51,7 +74,9 @@ Sentinel Agents is a multi-agent security system that automatically:
   - `POST /verify` - Verify patch effectiveness
 
 #### `orchestrator.py` - Security Pipeline
+
 The master autonomous pipeline that coordinates all security agents:
+
 - **Member 1:** AST Context Extraction via mock function
 - **Member 2:** Real API calls to `/analyze` endpoint for vulnerability scanning
 - **Red Team:** Exploit generation and logic analysis (mock)
@@ -63,6 +88,7 @@ The master autonomous pipeline that coordinates all security agents:
 - Support for multiple file types (.py, .js, .env, .json)
 
 #### `sandbox_runner.py` - Docker Execution Engine
+
 - Executes exploits in isolated Docker containers
 - Network-disabled and resource-limited (128MB)
 - 15-second timeout protection
@@ -70,6 +96,7 @@ The master autonomous pipeline that coordinates all security agents:
 - Automatic cleanup
 
 #### `core/ai_brain.py` - AI Integration
+
 - Kimi AI (Moonshot) API integration
 - Structured JSON responses
 - Schema-validated output
@@ -113,17 +140,20 @@ Sample vulnerable code for testing the security pipeline:
 ### Installation
 
 1. **Clone the repository:**
+
    ```bash
    git clone <repository-url>
    cd sentinel-agents/backend
    ```
 
 2. **Install dependencies:**
+
    ```bash
    pip install fastapi uvicorn docker python-dotenv requests tree-sitter tree-sitter-python pydantic
    ```
 
 3. **Configure environment:**
+
    ```bash
    echo "API_KEY=your_kimi_api_key_here" > .env
    ```
@@ -136,23 +166,27 @@ Sample vulnerable code for testing the security pipeline:
 ### Running the Application
 
 **Start FastAPI Server:**
+
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Run Autonomous Pipeline:**
+
 ```bash
 python orchestrator.py
 ```
 
 **Scan Entire Repository:**
 The orchestrator now includes a `scan_entire_repository()` function that:
+
 - Recursively scans directories for Python, JavaScript, JSON, and .env files
 - Automatically detects configuration files
 - Calls the auditor API for each file
 - Flags HIGH/CRITICAL severity findings
 
 **Test Sandbox (standalone):**
+
 ```bash
 python sandbox_runner.py
 ```
@@ -160,6 +194,7 @@ python sandbox_runner.py
 ## API Usage
 
 ### Analyze Code
+
 ```bash
 POST /analyze
 {
@@ -169,6 +204,7 @@ POST /analyze
 ```
 
 **Response:**
+
 ```json
 {
   "auditor_findings": ["SQL Injection detected"],
@@ -179,6 +215,7 @@ POST /analyze
 ```
 
 ### Generate Exploit
+
 ```bash
 POST /generate_poe
 {
@@ -188,6 +225,7 @@ POST /generate_poe
 ```
 
 ### Generate Patch
+
 ```bash
 POST /generate_patch
 {
@@ -197,6 +235,7 @@ POST /generate_patch
 ```
 
 ### Verify Patch
+
 ```bash
 POST /verify
 {
@@ -209,6 +248,7 @@ POST /verify
 ## Security Features
 
 ### Docker Sandbox Isolation
+
 - **Network Disabled:** No external communication
 - **Memory Limited:** 128MB max
 - **Timeout Protection:** 15-second execution limit
@@ -216,10 +256,13 @@ POST /verify
 - **Auto-Remove:** Containers cleaned up after execution
 
 ### Execution Caching
+
 Prevents redundant Docker runs by caching results based on SHA-256 hash of exploit scripts. Cache is stored in memory during runtime and managed by the sandbox runner.
 
 ### Attack Surface Analysis
+
 AST engine identifies:
+
 - User input sources (request parameters, sys.argv, input())
 - Database query sinks (cursor.execute)
 - File I/O operations
@@ -259,6 +302,7 @@ backend/
 ## Workflow Example
 
 ### Single File Analysis
+
 1. **Submit vulnerable code** via `/analyze`
 2. **AI analyzes** AST and identifies SQL injection
 3. **Red Team generates** Python exploit script
@@ -268,6 +312,7 @@ backend/
 7. **Exploit fails** → Patch verified ✅
 
 ### Repository Scanning
+
 1. **Orchestrator scans** entire directory recursively
 2. **Detects** .py, .js, .json, and .env files
 3. **Analyzes each file** via FastAPI auditor endpoint
@@ -276,9 +321,9 @@ backend/
 
 ## Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `API_KEY` | Kimi AI (Moonshot) API key | Yes |
+| Variable  | Description                | Required |
+| --------- | -------------------------- | -------- |
+| `API_KEY` | Kimi AI (Moonshot) API key | Yes      |
 
 ## Development
 
@@ -291,6 +336,7 @@ backend/
 ### Extending AI Agents
 
 Modify prompt templates in `main.py`:
+
 ```python
 PROMPTS = {
     "analyze": "...",
@@ -325,6 +371,7 @@ PROMPTS = {
 ## Security Considerations
 
 ⚠️ **Warning:** This tool executes potentially malicious code. Always:
+
 - Run in isolated environments
 - Review generated exploits before execution
 - Never execute on production systems
@@ -349,6 +396,7 @@ For issues and questions, please open an issue in the repository.
 ## Recent Changes
 
 ### Added
+
 - `sinks_extractor.py` - Detects dangerous function calls (eval, exec, os.system, subprocess, pickle, SQL cursors)
 - `.env` file - Environment configuration for API keys
 - `venv/` folder - Python virtual environment
@@ -360,6 +408,7 @@ For issues and questions, please open an issue in the repository.
 - **Multi-file support** - Scans .py, .js, .json, and .env files
 
 ### Updated
+
 - Orchestrator now makes real HTTP requests to `/analyze` endpoint
 - Added JSON pretty-printing for auditor results
 - Improved severity-based alerting (HIGH/CRITICAL flagging)
