@@ -4,41 +4,46 @@ def extract_global_variables(node, code_bytes, globals_list=None):
     if globals_list is None:
         globals_list = []
 
-    # Detect assignment nodes
+    def get_text(n):
+        return code_bytes[n.start_byte:n.end_byte].decode("utf-8")
+
+    def extract_identifiers_from_assignment(assign_node):
+        names = []
+
+        # Left side of assignment
+        left = assign_node.children[0]
+
+        # If simple identifier
+        if left.type == "identifier":
+            names.append(get_text(left))
+
+        # If tuple unpacking
+        elif left.type in ["tuple", "pattern_list"]:
+            for child in left.children:
+                if child.type == "identifier":
+                    names.append(get_text(child))
+
+        # 🔥 NEW: Check if right side is another assignment (chained)
+        right = assign_node.children[-1]
+        if right.type == "assignment":
+            names.extend(extract_identifiers_from_assignment(right))
+
+        return names
+
     if node.type == "assignment":
-        # Ensure it's module-level
         if (
             node.parent
             and node.parent.parent
             and node.parent.parent.type == "module"
         ):
-            left_node = node.children[0]
+            identifiers = extract_identifiers_from_assignment(node)
 
-            # Case 1: Single variable assignment
-            if left_node.type == "identifier":
-                var_name = code_bytes[
-                    left_node.start_byte:left_node.end_byte
-                ].decode("utf-8")
-
+            for name in identifiers:
                 globals_list.append({
-                    "name": var_name,
+                    "name": name,
                     "line": node.start_point[0] + 1
                 })
 
-            # Case 2: Tuple unpacking (a, b = ...)
-            elif left_node.type == "tuple":
-                for child in left_node.children:
-                    if child.type == "identifier":
-                        var_name = code_bytes[
-                            child.start_byte:child.end_byte
-                        ].decode("utf-8")
-
-                        globals_list.append({
-                            "name": var_name,
-                            "line": node.start_point[0] + 1
-                        })
-
-    # Recursively traverse
     for child in node.children:
         extract_global_variables(child, code_bytes, globals_list)
 
