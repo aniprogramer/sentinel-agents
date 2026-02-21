@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Activity, Cpu, FileCode, GitBranch, Lock, Search, ShieldCheck, Terminal, Zap } from 'lucide-react';
+import { Activity, FileCode, GitBranch, Lock, Search, ShieldCheck, Terminal, Zap } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 // --- Types ---
@@ -31,6 +31,15 @@ export default function HomePage() {
 	]);
 	const logEndRef = useRef<HTMLDivElement>(null);
 
+	const [repoMeta, setRepoMeta] = useState<{
+		owner?: string;
+		repo?: string;
+		commit?: string | null;
+		commitMessage?: string | null;
+		commitDate?: string | null;
+		pr?: { number: number; title?: string; url?: string } | null;
+	} | null>(null);
+
 	// Derived state to highlight cards based on the latest log type
 	const activeAgent = useMemo(() => {
 		if (!isAnalyzing) return null;
@@ -51,6 +60,29 @@ export default function HomePage() {
 			{ msg: 'System: Initializing multi-agent orchestration...', type: 'sys', time: new Date().toISOString() },
 		]);
 		setIsAnalyzing(true);
+
+		// fetch repo metadata (commit / PR) from server-side route
+		if (repoUrl) {
+			fetch('/api/upload', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ repoUrl }),
+			})
+				.then((r) => r.json())
+				.then((data) => {
+					if (data?.success && data.data) {
+						setRepoMeta({
+							owner: data.data.owner,
+							repo: data.data.repo,
+							commit: data.data.commit,
+							commitMessage: data.data.commitMessage,
+							commitDate: data.data.commitDate,
+							pr: data.data.pr,
+						});
+					}
+				})
+				.catch(() => {});
+		}
 
 		const demoSteps: Omit<LogEntry, 'time'>[] = [
 			{ msg: 'Auditor: Deep-scanning Abstract Syntax Tree...', type: 'audit' },
@@ -174,9 +206,9 @@ export default function HomePage() {
 					<Card className="lg:col-span-8 bg-[#05070a]/80 border-white/5 backdrop-blur-2xl shadow-3xl rounded-3xl overflow-hidden">
 						<div className="bg-white/2 px-6 py-4 border-b border-white/5 flex items-center justify-between">
 							<div className="flex gap-2">
-								<div className="w-3 h-3 rounded-full bg-slate-800" />
-								<div className="w-3 h-3 rounded-full bg-slate-800" />
-								<div className="w-3 h-3 rounded-full bg-slate-800" />
+								<div className="w-3 h-3 rounded-full bg-green-400" />
+								<div className="w-3 h-3 rounded-full bg-amber-400" />
+								<div className="w-3 h-3 rounded-full bg-red-400" />
 							</div>
 							<div className="flex items-center gap-2">
 								<Terminal className="w-3 h-3 text-blue-500" />
@@ -240,15 +272,38 @@ export default function HomePage() {
 									detail="PoE Payload Verified"
 									isActive={isAnalyzing}
 								/>
-								<EvidenceItem
-									icon={<GitBranch />}
-									label="PR #2491"
-									detail="Automated Patch"
-									isActive={!isAnalyzing && logs.length > 5}
-								/>
+								{repoMeta?.pr ? (
+									<EvidenceItem
+										icon={<GitBranch />}
+										label={`PR #${repoMeta.pr.number}`}
+										detail={repoMeta.pr.title ?? 'Automated Patch'}
+										isActive={!isAnalyzing && logs.length > 5}
+									/>
+								) : null}
+								{repoMeta?.commit ? (
+									<EvidenceItem
+										icon={<FileCode />}
+										label={`commit ${repoMeta.commit.slice(0, 7)}`}
+										detail={
+											repoMeta.commitMessage
+												? repoMeta.commitMessage.split('\n')[0]
+												: 'Latest commit'
+										}
+										isActive={!isAnalyzing && logs.length > 5}
+									/>
+								) : null}
+								{!repoMeta?.pr && !repoMeta?.commit ? (
+									<EvidenceItem
+										icon={<GitBranch />}
+										label="PR / Commit"
+										detail="Automated Patch"
+										isActive={!isAnalyzing && logs.length > 5}
+									/>
+								) : null}
 							</div>
 						</div>
 
+						{/*
 						<div className="p-8 rounded-3xl bg-linear-to-br from-blue-600/10 via-transparent to-transparent border border-blue-500/10">
 							<div className="flex items-center gap-4 mb-4">
 								<div className="p-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/40">
@@ -260,7 +315,7 @@ export default function HomePage() {
 								Every patch is cross-validated by spawning a twin-container architecture. We don't just
 								fix code; we verify the fix is unhackable.
 							</p>
-						</div>
+            </div> */}
 					</div>
 				</div>
 			</section>

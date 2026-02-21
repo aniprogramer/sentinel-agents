@@ -24,19 +24,19 @@ def call_ai(prompt: str, schema: dict, temperature: float = 0.2):
                 "response_mime_type": "application/json", # Native JSON mode!
             }
         )
-        
+
         # Inject the Pydantic schema into the system prompt
-        full_prompt = f"""You are Sentinel, an autonomous AI security auditor. 
+        full_prompt = f"""You are Sentinel, an autonomous AI security auditor.
 You must output ONLY valid JSON that strictly matches this schema:
 {json.dumps(schema)}
 
 USER PROMPT:
 {prompt}"""
-        
+
         response = model.generate_content(full_prompt)
-        
+
         # Because we forced JSON MIME type, we can just load it directly
         return json.loads(response.text)
-        
+
     except Exception as e:
         return {"error": f"LLM parsing failed: {str(e)}"}
