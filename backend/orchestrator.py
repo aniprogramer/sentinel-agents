@@ -1,6 +1,7 @@
 import os
 import time
 from sandbox_runner import run_exploit_in_sandbox
+import requests
 
 # ==========================================
 # 🛑 MOCKS: We use these until Member 1 & 2 finish their code
@@ -8,8 +9,16 @@ from sandbox_runner import run_exploit_in_sandbox
 def mock_ast_analyzer(code):
     return {"functions": ["login"], "sinks": ["execute_sql"]}
 
-def mock_auditor(code, ast):
-    return {"status": "clean", "surface_vulns": []}
+
+def call_auditor_api(raw_code, ast_json):
+    """Hits the Member 2 FastAPI endpoint."""
+    url = "[http://127.0.0.1:8000/analyze](http://127.0.0.1:8000/analyze)"
+    payload = {
+        "raw_code": raw_code,
+        "ast_json": ast_json
+    }
+    response = requests.post(url, json=payload)
+    return response.json()
 
 def mock_red_team(code):
     # This is a fake Python exploit the AI *would* generate
