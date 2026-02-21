@@ -54,58 +54,101 @@ export default function HomePage() {
 		logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 	}, [logs]);
 
-	const runDemo = () => {
+	const appendLog = (entry: { msg: string; type?: LogEntry['type']; time?: string }) => {
+		const e: LogEntry = {
+			msg: entry.msg,
+			type: entry.type ?? 'sys',
+			time: entry.time ?? new Date().toISOString(),
+		};
+		setLogs((prev) => [...prev, e]);
+	};
+
+	const runDemo = async () => {
 		if (isAnalyzing) return;
 		setLogs([
 			{ msg: 'System: Initializing multi-agent orchestration...', type: 'sys', time: new Date().toISOString() },
 		]);
 		setIsAnalyzing(true);
 
-		// fetch repo metadata (commit / PR) from server-side route
-		if (repoUrl) {
-			fetch('/api/upload', {
+		try {
+			const res = await fetch(`/api/upload?action=analyze`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ repoUrl }),
-			})
-				.then((r) => r.json())
-				.then((data) => {
-					if (data?.success && data.data) {
-						setRepoMeta({
-							owner: data.data.owner,
-							repo: data.data.repo,
-							commit: data.data.commit,
-							commitMessage: data.data.commitMessage,
-							commitDate: data.data.commitDate,
-							pr: data.data.pr,
-						});
+				body: JSON.stringify({ repoUrl, action: 'analyze' }),
+			});
+
+			if (!res.ok) {
+				const txt = await res.text().catch(() => String(res.status));
+				appendLog({ msg: `Error: ${res.status} ${txt}`, type: 'sys' });
+				setIsAnalyzing(false);
+				return;
+			}
+
+			const ct = res.headers.get('content-type') || '';
+			// If backend returned JSON (final snapshot), handle gracefully
+			if (ct.includes('application/json')) {
+				const json = await res.json().catch(() => null);
+				if (json?.success && json.data?.owner) {
+					setRepoMeta({
+						owner: json.data.owner,
+						repo: json.data.repo,
+						commit: json.data.commit,
+						commitMessage: json.data.commitMessage,
+						commitDate: json.data.commitDate,
+						pr: json.data.pr,
+					});
+				}
+				// If the JSON contains logs array, append them
+				if (Array.isArray(json?.logs)) {
+					json.logs.forEach((l: any) =>
+						appendLog({ msg: l.msg ?? JSON.stringify(l), type: l.type ?? 'sys', time: l.time })
+					);
+				}
+				setIsAnalyzing(false);
+				return;
+			}
+
+			// Otherwise attempt to stream text/NDJSON
+			const reader = res.body?.getReader();
+			if (!reader) {
+				appendLog({ msg: 'No stream available from server.', type: 'sys' });
+				setIsAnalyzing(false);
+				return;
+			}
+
+			const dec = new TextDecoder();
+			let buffer = '';
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				buffer += dec.decode(value, { stream: true });
+				const parts = buffer.split('\n');
+				buffer = parts.pop() ?? '';
+				for (const part of parts) {
+					if (!part.trim()) continue;
+					try {
+						const obj = JSON.parse(part);
+						if (obj.repoMeta) setRepoMeta(obj.repoMeta);
+						appendLog({ msg: obj.msg ?? JSON.stringify(obj), type: obj.type ?? 'sys', time: obj.time });
+					} catch {
+						appendLog({ msg: part, type: 'sys' });
 					}
-				})
-				.catch(() => {});
+				}
+			}
+
+			if (buffer.trim()) {
+				try {
+					const obj = JSON.parse(buffer);
+					appendLog({ msg: obj.msg ?? JSON.stringify(obj), type: obj.type ?? 'sys', time: obj.time });
+				} catch {
+					appendLog({ msg: buffer, type: 'sys' });
+				}
+			}
+		} catch (err: any) {
+			appendLog({ msg: `Stream error: ${String(err)}`, type: 'sys' });
+		} finally {
+			setIsAnalyzing(false);
 		}
-
-		const demoSteps: Omit<LogEntry, 'time'>[] = [
-			{ msg: 'Auditor: Deep-scanning Abstract Syntax Tree...', type: 'audit' },
-			{ msg: 'Auditor: Taint analysis flagged unsanitized input in /routes/db.ts', type: 'audit' },
-			{ msg: 'Red Team: Initializing Proof-of-Exploit (PoE) generation...', type: 'red' },
-			{ msg: 'Red Team: Attempting blind secondary-order injection...', type: 'red' },
-			{ msg: 'System: Launching ephemeral sandbox v4.2...', type: 'sys' },
-			{ msg: 'Red Team: CRITICAL - Exploit confirmed. PII Leak simulated.', type: 'red_alert' },
-			{ msg: 'Blue Team: Intercepting execution trace...', type: 'blue' },
-			{ msg: 'Blue Team: Synthesizing fix via context-aware LLM...', type: 'blue' },
-			{ msg: 'Verifier: Validating patch against adversarial payload...', type: 'verify' },
-			{ msg: 'System: VULNERABILITY NEUTRALIZED. Regression: 0%.', type: 'sys_green' },
-		];
-
-		demoSteps.forEach((step, index) => {
-			setTimeout(
-				() => {
-					setLogs((prev) => [...prev, { ...step, time: new Date().toISOString() } as LogEntry]);
-					if (index === demoSteps.length - 1) setIsAnalyzing(false);
-				},
-				(index + 1) * 1400
-			);
-		});
 	};
 
 	return (
