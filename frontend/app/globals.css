@@ -1,0 +1,117 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: oklch(8% 0.02 260);       /* Deep dark base */
+  --color-foreground: oklch(96% 0.01 200);      /* Light foreground */
+
+  --color-card: oklch(14% 0.03 260 / 70%);
+  --color-card-foreground: oklch(98% 0.01 200);
+
+  --color-primary: oklch(72% 0.26 200);         /* Electric Cyan */
+  --color-secondary: oklch(62% 0.28 340);       /* Neon Pink */
+  --color-accent: oklch(85% 0.2 90);            /* Warning Yellow */
+  --color-success: oklch(78% 0.22 145);         /* Matrix Green */
+  --color-destructive: oklch(60% 0.24 25);      /* Red Alert */
+
+  --color-border: oklch(100% 0 0 / 10%);
+  --color-input: oklch(100% 0 0 / 6%);
+  --color-ring: oklch(72% 0.26 200 / 48%);
+
+  --noise-url: url("https://grainy-gradients.vercel.app/noise.svg");
+
+  --radius-xl: 1.5rem;
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-none transition-colors duration-200;
+  }
+
+  html, body, #__next {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* background-color: var(--color-background); */
+    background-image:
+      radial-gradient(1000px 500px at 10% 15%, var(--color-primary) / 12%, transparent),
+      radial-gradient(800px 400px at 90% 85%, var(--color-secondary) / 10%, transparent),
+      var(--noise-url);
+    background-repeat: no-repeat, no-repeat, repeat;
+    background-attachment: fixed;
+    background-size: cover, cover, auto;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+    color: var(--color-foreground);
+  }
+  ::-moz-selection {
+    background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+    color: var(--color-foreground);
+  }
+}
+
+/* Glassmorphism panels */
+.glass {
+  @apply backdrop-blur-xl;
+  background: linear-gradient(180deg, var(--color-card), transparent);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+}
+
+/* Glow utilities */
+.glow-primary { box-shadow: 0 0 20px var(--color-primary); }
+.glow-red     { box-shadow: 0 0 20px var(--color-destructive); }
+.glow-yellow  { box-shadow: 0 0 20px var(--color-accent); }
+.glow-green   { box-shadow: 0 0 20px var(--color-success); }
+
+/* Glitch effect */
+.glitch {
+  animation: glitch 2s infinite;
+}
+@keyframes glitch {
+  0%, 95%, 100% { transform: none; opacity: 1; }
+  96% { transform: skewX(8deg); opacity: 0.85; }
+  98% { transform: translate(2px, -2px); }
+}
+
+/* Full bleed background overlay */
+.full-bleed-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 450px at 8% 12%, var(--color-primary) / 14%, transparent),
+    radial-gradient(700px 350px at 92% 88%, var(--color-secondary) / 12%, transparent);
+  backdrop-filter: blur(6px) saturate(1.05);
+}
+
+/* Soft border utility */
+.soft-border { border: 1px solid var(--color-border); }
+
+/* Cyber Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: oklch(15% 0 0); }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-muted, var(--color-primary));
+  border-radius: 10px;
+  box-shadow: 0 0 10px var(--color-primary);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
+  box-shadow: 0 0 15px var(--color-secondary);
+}
