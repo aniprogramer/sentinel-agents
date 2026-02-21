@@ -6,45 +6,81 @@ from globals_extractor import extract_global_variables
 from inputs_extractor import extract_input_sources
 from sinks_extractor import extract_dangerous_sinks
 
+
+MAX_FILE_SIZE = 200_000
+
+
 def deduplicate(items):
     seen = set()
     unique = []
+
     for item in items:
-        key = (item["type"], item["line"])
+        key = (item.get("type"), item.get("line"))
         if key not in seen:
             seen.add(key)
             unique.append(item)
+
     return unique
 
 
-def analyze_code(code: str):
-    if len(code) > 200_000:
-        return {
-            "error": "File too large"
+def empty_response(error_message="Analysis failed", details=""):
+    return {
+        "error": error_message,
+        "details": details,
+        "metadata": {
+            "lines_of_code": 0
+        },
+        "summary": {
+            "total_functions": 0,
+            "total_classes": 0,
+            "total_imports": 0,
+            "total_inputs": 0,
+            "total_sinks": 0,
+            "risk_level": "UNKNOWN"
+        },
+        "details_section": {
+            "functions": [],
+            "classes": [],
+            "imports": [],
+            "global_variables": [],
+            "input_sources": [],
+            "dangerous_sinks": []
         }
-    
+    }
+
+
+def analyze_code(code: str):
+
+    if not code:
+        return empty_response("Empty code input")
+
+    if len(code) > MAX_FILE_SIZE:
+        return empty_response("File too large")
+
     code_bytes = code.encode("utf-8")
 
     try:
         tree = parser.parse(code_bytes)
     except Exception as e:
-        return {
-            "error": "Parsing failed",
-            "details": str(e)
-        }
-    
+        return empty_response("Parsing failed", str(e))
+
     root_node = tree.root_node
 
-    functions = extract_functions(root_node, code_bytes)
-    classes = extract_classes(root_node, code_bytes)
-    imports = extract_imports(root_node, code_bytes)
-    globals_list = extract_global_variables(root_node, code_bytes)
-    input_sources = extract_input_sources(root_node, code_bytes)
-    dangerous_sinks = extract_dangerous_sinks(root_node, code_bytes)
-    input_sources = deduplicate(input_sources)
-    dangerous_sinks = deduplicate(dangerous_sinks)
+    try:
+        functions = extract_functions(root_node, code_bytes)
+        classes = extract_classes(root_node, code_bytes)
+        imports = extract_imports(root_node, code_bytes)
+        globals_list = extract_global_variables(root_node, code_bytes)
+        input_sources = extract_input_sources(root_node, code_bytes)
+        dangerous_sinks = extract_dangerous_sinks(root_node, code_bytes)
 
-    # Simple risk scoring
+        input_sources = deduplicate(input_sources)
+        dangerous_sinks = deduplicate(dangerous_sinks)
+
+    except Exception as e:
+        return empty_response("Extraction failed", str(e))
+
+    # --- Risk Scoring ---
     risk_score = len(input_sources) * 2 + len(dangerous_sinks) * 3
 
     if risk_score >= 5:
@@ -53,7 +89,6 @@ def analyze_code(code: str):
         risk_level = "MEDIUM"
     else:
         risk_level = "LOW"
-
 
     summary = {
         "total_functions": len(functions),
@@ -64,8 +99,11 @@ def analyze_code(code: str):
         "risk_level": risk_level
     }
 
-    # 🔹 Build detailed section
-    details = {
+    metadata = {
+        "lines_of_code": len(code.splitlines())
+    }
+
+    details_section = {
         "functions": functions,
         "classes": classes,
         "imports": imports,
@@ -75,9 +113,12 @@ def analyze_code(code: str):
     }
 
     return {
+        "error": None,
+        "metadata": metadata,
         "summary": summary,
-        "details": details
+        "details_section": details_section
     }
+
 
 if __name__ == "__main__":
     import json
