@@ -149,7 +149,12 @@ Sample vulnerable code for testing the security pipeline:
 2. **Install dependencies:**
 
    ```bash
-   pip install fastapi uvicorn docker python-dotenv requests tree-sitter tree-sitter-python pydantic
+   pip install -r requirements.txt
+   ```
+
+   Or manually install core packages:
+   ```bash
+   pip install fastapi uvicorn docker python-dotenv requests tree-sitter tree-sitter-python pydantic openai google-generativeai
    ```
 
 3. **Configure environment:**
@@ -277,6 +282,8 @@ backend/
 ├── main.py                    # FastAPI application
 ├── orchestrator.py            # Master security pipeline
 ├── sandbox_runner.py          # Docker execution engine
+├── requirements.txt           # Python dependencies
+├── execution_cache.json       # Execution result cache
 ├── .env                       # Environment variables (API keys)
 ├── Dockerfile.sandbox         # Sandbox container definition
 ├── core/
@@ -324,6 +331,53 @@ backend/
 | Variable  | Description                | Required |
 | --------- | -------------------------- | -------- |
 | `API_KEY` | Kimi AI (Moonshot) API key | Yes      |
+
+## Dependencies
+
+The project uses a comprehensive set of dependencies documented in `requirements.txt`:
+
+### Core Framework
+
+- **FastAPI** (0.129.0) - Web framework for REST API
+- **Uvicorn** (0.41.0) - ASGI server
+- **Pydantic** (2.12.5) - Data validation using Python type annotations
+
+### AST & Code Analysis
+
+- **Tree-sitter** (0.25.2) - Incremental parsing library
+- **Tree-sitter-Python** (0.25.0) - Python language binding
+
+### Container & Orchestration
+
+- **Docker** (7.1.0) - Container runtime integration
+
+### AI Backends
+
+- **OpenAI** (2.21.0) - OpenAI API integration
+- **Google Generative AI** (0.8.6) - Google's generative AI models
+
+### HTTP & Networking
+
+- **Requests** (2.32.5) - HTTP library
+- **httpx** (0.28.1) - Modern HTTP client
+- **httpcore** (1.0.9) - Low-level HTTP client
+
+### Configuration & Utilities
+
+- **python-dotenv** (1.2.1) - Environment variable management
+- **cryptography** (46.0.5) - Cryptographic recipes
+- **tqdm** (4.67.3) - Progress bars
+
+### Additional Tools
+
+- **protobuf** (5.29.6) - Protocol buffer support
+- **grpcio** (1.78.1) - gRPC framework
+
+Install all dependencies with:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Development
 
@@ -397,6 +451,8 @@ For issues and questions, please open an issue in the repository.
 
 ### Added
 
+- `requirements.txt` - Complete Python dependency list (52 packages including FastAPI, Docker, Tree-sitter, OpenAI, Google Generative AI)
+- `execution_cache.json` - Persistent execution result cache for replay capability
 - `sinks_extractor.py` - Detects dangerous function calls (eval, exec, os.system, subprocess, pickle, SQL cursors)
 - `.env` file - Environment configuration for API keys
 - `venv/` folder - Python virtual environment
@@ -414,4 +470,13 @@ For issues and questions, please open an issue in the repository.
 - Improved severity-based alerting (HIGH/CRITICAL flagging)
 - AST engine components expanded with sinks detection
 - Project structure documentation updated
-- Removed persistent execution cache file
+- Installation instructions now reference `requirements.txt`
+- Multiple AI backend support (Kimi, OpenAI, Google Generative AI)
+
+### Dependencies Highlights
+
+- **Web Framework:** FastAPI 0.129.0, Uvicorn 0.41.0
+- **Container:** Docker 7.1.0
+- **AST Parsing:** Tree-sitter 0.25.2, Tree-sitter-Python 0.25.0
+- **AI/ML:** OpenAI 2.21.0, Google Generative AI 0.8.6
+- **Utilities:** Pydantic 2.12.5, python-dotenv 1.2.1, requests 2.32.5
