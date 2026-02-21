@@ -73,19 +73,25 @@ Sentinel Agents is a multi-agent security system that automatically:
   - `POST /generate_patch` - Generate security patches
   - `POST /verify` - Verify patch effectiveness
 
-#### `orchestrator.py` - Security Pipeline
+#### `orchestrator/` - Modular Security Pipeline Package
 
-The master autonomous pipeline that coordinates all security agents:
+The orchestrator has been refactored into a clean, modular package structure for better maintainability and readability:
 
-- **Member 1:** AST Context Extraction via mock function
-- **Member 2:** Real API calls to `/analyze` endpoint for vulnerability scanning
-- **Red Team:** Exploit generation and logic analysis (mock)
-- **Blue Team:** Patch generation (mock)
-- **Verifier:** Patch validation and re-testing
-- **Repository Scanner:** Full directory scanning with glob pattern matching
-- Integrates with FastAPI backend via HTTP requests
-- Error handling for API failures with status code checks
-- Support for multiple file types (.py, .js, .env, .json)
+**Package Structure:**
+- **`agents.py`** - All agent API connectors (Auditor, Red Team, Blue Team, Verifier)
+- **`pipeline.py`** - Main autonomous security pipeline execution logic
+- **`scanner.py`** - Repository scanning functionality with multi-file support
+- **`utils.py`** - Utility functions (patching, AST extraction, validation helpers)
+- **`__init__.py`** - Package initialization and exports
+
+**Key Features:**
+- ✅ **Real AST Analysis:** Uses the actual AST analyzer (no mocks!)
+- ✅ **Live API Integration:** All agents call real FastAPI endpoints
+- ✅ **Modular Design:** Each file has single, clear responsibility
+- ✅ **Error Handling:** Comprehensive status code validation
+- ✅ **Multi-File Support:** Scans .py, .js, .json, and .env files
+- ✅ **Iterative Patching:** 3-attempt loop with AI feedback learning
+- ✅ **Repository Scanning:** Recursive directory traversal with glob patterns
 
 #### `sandbox_runner.py` - Docker Execution Engine
 
@@ -97,7 +103,7 @@ The master autonomous pipeline that coordinates all security agents:
 
 #### `core/ai_brain.py` - AI Integration
 
-- Kimi AI (Moonshot) API integration
+- Gemini API integration
 - Structured JSON responses
 - Schema-validated output
 - Temperature-controlled generation
@@ -116,10 +122,43 @@ Static analysis toolkit using Tree-sitter:
 - `parser_setup.py` - Tree-sitter configuration
 - `helpers.py` - Utility functions for AST processing
 
+### Orchestrator Package (`orchestrator/`)
+
+Modular security pipeline package with clean separation of concerns:
+
+**`agents.py`** - Agent API Connectors
+- `call_auditor_api()` - Checkpoint 1: Vulnerability analysis
+- `call_red_team_api()` - Checkpoint 2: Exploit generation  
+- `call_blue_team_api()` - Checkpoint 3/4: Patch generation
+- `call_verifier()` - Sandbox execution wrapper
+- Comprehensive error handling with HTTP status validation
+
+**`pipeline.py`** - Security Pipeline Logic
+- `run_autonomous_pipeline()` - Main pipeline orchestration with 5 phases:
+  1. Analysis & Detection (AST + Auditor)
+  2. AND Gate Logic (exploitability check)
+  3. Exploitation (Red Team PoE generation)
+  4. Verification (Sandbox execution)
+  5. Patching & Iterative Verification (up to 3 attempts)
+- `_run_patch_verification_loop()` - Iterative patch testing with AI feedback
+
+**`scanner.py`** - Repository Scanner
+- `scan_entire_repository()` - Multi-file vulnerability scanning
+- `_gather_scannable_files()` - Recursive file discovery with glob patterns
+- `_scan_single_file()` - Individual file analysis with severity filtering
+
+**`utils.py`** - Utility Functions
+- `apply_patch()` - Apply security patches to files
+- `extract_ast_context()` - Real AST extraction using analyzer.py
+- `get_vulnerability_description()` - Extract primary vulnerability info
+- `is_exploitable()` - Check if vulnerabilities are exploitable
+- `is_critical_finding()` - Filter HIGH/CRITICAL severity issues
+
 ### Test Files (`test_files/`)
 
 Sample vulnerable code for testing the security pipeline:
 
+- `ast_test.py` - AST analyzer validation tests
 - `sample_code_v2.py` - Simple Python code with variable assignments for basic testing
 - `sample_vulnerable.py` - Comprehensive vulnerability examples including:
   - SQL Injection via string formatting
@@ -280,7 +319,7 @@ AST engine identifies:
 ```
 backend/
 ├── main.py                    # FastAPI application
-├── orchestrator.py            # Master security pipeline
+├── orchestrator.py            # Main entry point (imports from package)
 ├── sandbox_runner.py          # Docker execution engine
 ├── requirements.txt           # Python dependencies
 ├── execution_cache.json       # Execution result cache
@@ -288,6 +327,12 @@ backend/
 ├── Dockerfile.sandbox         # Sandbox container definition
 ├── core/
 │   └── ai_brain.py           # Kimi AI integration
+├── orchestrator/              # 🆕 Modular orchestrator package
+│   ├── __init__.py           # Package initialization
+│   ├── agents.py             # Agent API connectors
+│   ├── pipeline.py           # Main security pipeline logic
+│   ├── scanner.py            # Repository scanner
+│   └── utils.py              # Utility functions
 ├── ast_engine/
 │   ├── __init__.py
 │   ├── analyzer.py           # Core AST parser
@@ -301,6 +346,7 @@ backend/
 │   └── helpers.py             # AST utility functions
 ├── temp/                      # Temporary exploit scripts
 ├── test_files/                # Sample vulnerable code for testing
+│   ├── ast_test.py           # AST analysis test file
 │   ├── sample_code_v2.py     # Simple test code
 │   └── sample_vulnerable.py   # Complex vulnerability examples
 └── venv/                      # Python virtual environment
@@ -369,34 +415,66 @@ The project uses a comprehensive set of dependencies documented in `requirements
 - **tqdm** (4.67.3) - Progress bars
 
 ### Additional Tools
-
-- **protobuf** (5.29.6) - Protocol buffer support
-- **grpcio** (1.78.1) - gRPC framework
-
-Install all dependencies with:
-
+Multi-language Support:** Currently optimized for Python; JS/JSON analysis is basic
+- **Timeout:** 15-second max execution per exploit
+- **Dangerous Function Detection:** Limited to predefined list in sinks_extractor.py
+- **Repository Scanning:** Pattern matching limited to common file extensions (.py, .js, .json, .env)
+- **Patch Retry Limit:** Maximum 3 iterative patch attempts before requiring human intervention
+- **Single Exploit per Vulnerability:** Generates one PoE script per vulnerability type
 ```bash
 pip install -r requirements.txt
 ```
-
-## Development
-
-### Adding New Vulnerability Detection
-
-1. Update AST extractors in `ast_engine/`
-2. Add detection patterns to analysis prompt
+Multi-language support (JavaScript, Java, Go, C/C++)
+- [ ] Distributed sandbox execution across multiple containers
+- [ ] Web UI dashboard for real-time monitoring
+- [ ] CI/CD pipeline integration (GitHub Actions, GitLab CI)
+- [ ] Vulnerability database integration (CVE mapping)
+- [ ] Machine learning-based pattern dete (e.g., add to `sinks_extractor.py`)
+2. Add detection patterns to analysis prompt in `main.py`
 3. Update response schemas in `main.py`
+4. Test with new sample files in `test_files/`
 
 ### Extending AI Agents
 
-Modify prompt templates in `main.py`:
+**Modify API Connectors** (`orchestrator/agents.py`):
+```python
+def call_new_agent_api(parameters):
+    url = "http://127.0.0.1:8000/new_endpoint"
+    payload = {...}
+    response = requests.post(url, json=payload)
+    # Add error handling
+    return response.json()
+```
 
+**Update Pipeline Logic** (`orchestrator/pipeline.py`):
+```python
+# Add new phase in run_autonomous_pipeline()
+new_agent_results = call_new_agent_api(...)
+```
+
+**Modify Prompt Templates** (`main.py`):
 ```python
 PROMPTS = {
     "analyze": "...",
     "generate_poe": "...",
     "generate_patch": "...",
-    "verify": "..."
+    "verify": "...",
+    "new_agent": "..."  # Add new prompt
+}
+```
+
+### Working with the Modular Structure
+
+The orchestrator package is designed for easy maintenance:
+
+```python
+# Import the main functions
+from orchestrator import run_autonomous_pipeline, scan_entire_repository
+
+# Or import specific components
+from orchestrator.agents import call_auditor_api, call_red_team_api
+from orchestrator.utils import extract_ast_context, is_critical_finding
+from orchestrator.scanner import scan_entire_repository   "verify": "..."
 }
 ```
 
@@ -414,7 +492,8 @@ PROMPTS = {
 - [ ] Real AST-based vulnerability detection (replace mock_ast_analyzer)
 - [ ] Full AI agent integration for Red Team and Blue Team
 - [ ] Multi-language support (JavaScript, Java, Go)
-- [ ] Distributed sandbox execution
+- [ ] Distributed sandbox ex2, 2026  
+**Version:** 2.0 (Modular Architecture)
 - [ ] Web UI dashboard
 - [ ] CI/CD pipeline integration
 - [ ] Vulnerability database integration
@@ -448,31 +527,48 @@ For issues and questions, please open an issue in the repository.
 **Last Updated:** February 21, 2026
 
 ## Recent Changes
+v2.0 - Major Refactoring (February 22, 2026)
 
-### Added
+**🎉 Orchestrator Modularization**
+- **Complete refactoring** of orchestrator.py into modular package structure
+- Created `orchestrator/` package with 5 specialized modules:
+  - `agents.py` - Agent API connectors (92 lines)
+  - `pipeline.py` - Pipeline logic (122 lines)
+  - `scanner.py` - Repository scanner (70 lines)
+  - `utils.py` - Utility functions (60 lines)
+  - `__init__.py` - Package exports (11 lines)
+- **Removed all mocks** - All agents now use real API implementations
+- **Real AST extraction** - Uses actual analyzer.py instead of mock functions
+- **Improved readability** - Reduced from 270+ line monolith to small, focused modules
+- Added comprehensive docstrings for all functions
 
-- `requirements.txt` - Complete Python dependency list (52 packages including FastAPI, Docker, Tree-sitter, OpenAI, Google Generative AI)
-- `execution_cache.json` - Persistent execution result cache for replay capability
-- `sinks_extractor.py` - Detects dangerous function calls (eval, exec, os.system, subprocess, pickle, SQL cursors)
-- `.env` file - Environment configuration for API keys
+**✨ New Features**
+- `test_files/ast_test.py` - AST analyzer validation tests
+- Iterative patch verification with AI feedback learning (max 3 attempts)
+- Enhanced error messages with context-aware logging
+- Better separation of concerns (agents, pipeline, scanner, utilities)
+
+### v1.5 - Core Functionality (February 21, 2026)
+
+**Added**
+- `requirements.txt` - Complete Python dependency list (52 packages)
+- `execution_cache.json` - Persistent execution result cache
+- `sinks_extractor.py` - Dangerous function detection
+- `.env` file - Environment configuration
 - `venv/` folder - Python virtual environment
-- `test_files/` directory - Sample vulnerable code for testing
-  - `sample_code_v2.py` - Simple test code with variables
-  - `sample_vulnerable.py` - Complex vulnerability examples (SQLi, RCE, pickle deserialization)
-- **Repository scanning** - `scan_entire_repository()` function with glob pattern matching
-- **Error handling** - API failure detection with HTTP status code validation
-- **Multi-file support** - Scans .py, .js, .json, and .env files
+- `test_files/` directory with sample vulnerable code
+- Repository scanning with glob pattern matching
+- Error handling with HTTP status code validation
+- Multi-file support (.py, .js, .json, .env)
 
-### Updated
-
-- Orchestrator now makes real HTTP requests to `/analyze` endpoint
-- Added JSON pretty-printing for auditor results
-- Improved severity-based alerting (HIGH/CRITICAL flagging)
-- AST engine components expanded with sinks detection
-- Project structure documentation updated
-- Installation instructions now reference `requirements.txt`
+**Updated**
+- Orchestrator now makes real HTTP requests to all endpoints
+- JSON pretty-printing for auditor results
+- Severity-based alerting (HIGH/CRITICAL flagging)
+- AST engine expanded with sinks detection
 - Multiple AI backend support (Kimi, OpenAI, Google Generative AI)
 
+### Dependencie
 ### Dependencies Highlights
 
 - **Web Framework:** FastAPI 0.129.0, Uvicorn 0.41.0
