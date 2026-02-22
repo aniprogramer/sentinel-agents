@@ -13,6 +13,15 @@ Sentinel Agents is a multi-agent security system that automatically:
 5. **Patches** vulnerabilities automatically
 6. **Verifies** patch effectiveness by re-running exploits
 
+## Features ✨
+
+- **Autonomous Security Audit**: Uses AST parsing and AI models to detect vulnerabilities.
+- **Exploit Generation (Red Team)**: Automatically generates Proof of Concept (PoC) exploit scripts.
+- **Sandboxed Execution**: Safely executes generated exploits in isolated Docker containers.
+- **Automated Patching (Blue Team)**: Suggests and applies patches to fix identified vulnerabilities.
+- **Verification Loop**: Verifies the effectiveness of patches by re-running the exploit against the patched code.
+- **Modern Web Dashboard**: A user-friendly interface built with Next.js and Shadcn/UI for managing scans and viewing reports.
+
 ## Architecture
 
 ```
@@ -62,6 +71,23 @@ Sentinel Agents is a multi-agent security system that automatically:
 ```
 
 ## Components
+
+### Tech Stack 💻
+
+#### Backend
+- **Language**: Python 3.10+
+- **Framework**: FastAPI
+- **AI Integration**: OpenAI / Google Gemini
+- **Parsing**: Tree-sitter / Custom AST Engine
+- **Sandboxing**: Docker SDK for Python
+
+  - `POST /stream-logs` - SSE endpoint for real-time analysis logs
+  - `POST /upload` - File upload handler for the dashboard
+#### Frontend
+- **Framework**: Next.js 15 (App Router)
+- **UI Library**: React 19
+- **Styling**: Tailwind CSS v4
+- **Components**: Shadcn/UI, Lucide React
 
 ### Core Modules
 
@@ -171,10 +197,11 @@ Sample vulnerable code for testing the security pipeline:
 ## Setup
 
 ### Prerequisites
-
-- Python 3.10+
+Node.js 18+ (for Frontend)
+- Docker Desktop (running)
+- OpenAI API Key or Google Gemini API Key
 - Docker
-- Kimi AI API Key (Moonshot)
+
 
 ### Installation
 
@@ -203,21 +230,38 @@ Sample vulnerable code for testing the security pipeline:
    ```
 
 4. **Build Docker sandbox:**
+   cd backend
+   docker build -t sandbox_runner -f Dockerfile.sandbox .
+   ```
+
+5. **Frontend Setup:**
    ```bash
-   docker build -t sentinel_sandbox:latest -f Dockerfile.sandbox .
+   cd ../frontend
+   npm install
    ```
 
 ### Running the Application
 
-**Start FastAPI Server:**
+**Start Backend Server:**
 
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+cd backend
+# Create .env with GEMINI_API_KEY
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Run Autonomous Pipeline:**
+**Start Frontend Dashboard:**
 
 ```bash
+cd frontend
+npm run dev
+```
+Access the dashboard at `http://localhost:3000`
+
+**Run Autonomous Pipeline (CLI):**
+
+```bash
+python orchestrator_entry.py
 python orchestrator.py
 ```
 
@@ -300,40 +344,41 @@ POST /verify
 - **Auto-Remove:** Containers cleaned up after execution
 
 ### Execution Caching
-
-Prevents redundant Docker runs by caching results based on SHA-256 hash of exploit scripts. Cache is stored in memory during runtime and managed by the sandbox runner.
-
-### Attack Surface Analysis
-
-AST engine identifies:
-
-- User input sources (request parameters, sys.argv, input())
-- Database query sinks (cursor.execute)
-- File I/O operations
-- Network calls
-- Command execution points (os.system, subprocess)
-- Dangerous functions (eval, exec, pickle.loads)
-
-## Project Structure
-
+├── backend/                  # Python FastAPI Backend
+│   ├── main.py               # REST API & WebSocket handler
+│   ├── orchestrator_entry.py # CLI entry point
+│   ├── sandbox_runner.py     # Docker execution engine
+│   ├── requirements.txt      # Python dependencies
+│   ├── execution_cache.json  # Execution result cache
+│   ├── .env                  # Environment variables
+│   ├── Dockerfile.sandbox    # Sandbox container definition
+│   ├── core/
+│   │   └── ai_brain.py       # AI Model integration (Gemini)
+│   ├── orchestrator/         # Modular security pipeline
+│   │   ├── __init__.py
+│   │   ├── agents.py         # Agent API connectors
+│   │   ├── pipeline.py       # Main pipeline logic
+│   │   ├── scanner.py        # Repository scanner
+│   │   └── utils.py          # Utilities
+│   ├── ast_engine/           # Static Analysis Engine
+│   │   ├── analyzer.py       # AST Logic
+│   │   └── ...
+│   ├── schemas/              # Pydantic Models
+│   └── test_files/           # Vulnerable code samples
+│
+├── frontend/                 # Next.js Frontend
+│   ├── app/                  # App Router
+│   │   ├── page.tsx          # Main Dashboard
+│   │   ├── layout.tsx        # Root Layout
+│   │   └── api/              # Frontend API routes
+│   ├── components/           # React Components (Shadcn/UI)
+│   ├── lib/                  # Utilities
+│   ├── public/               # Static assets
+│   ├── package.json          # Node dependencies
+│   └── tailwind.config.ts    # Tailwind configuration
+└── scans/                    # Output directory for scans
 ```
-backend/
-├── main.py                    # FastAPI application
-├── orchestrator.py            # Main entry point (imports from package)
-├── sandbox_runner.py          # Docker execution engine
-├── requirements.txt           # Python dependencies
-├── execution_cache.json       # Execution result cache
-├── .env                       # Environment variables (API keys)
-├── Dockerfile.sandbox         # Sandbox container definition
-├── core/
-│   └── ai_brain.py           # Kimi AI integration
-├── orchestrator/              # 🆕 Modular orchestrator package
-│   ├── __init__.py           # Package initialization
-│   ├── agents.py             # Agent API connectors
-│   ├── pipeline.py           # Main security pipeline logic
-│   ├── scanner.py            # Repository scanner
-│   └── utils.py              # Utility functions
-├── ast_engine/
+ ast_engine/
 │   ├── __init__.py
 │   ├── analyzer.py           # Core AST parser
 │   ├── imports_extractor.py  # Import statement extraction
@@ -414,105 +459,31 @@ The project uses a comprehensive set of dependencies documented in `requirements
 - **cryptography** (46.0.5) - Cryptographic recipes
 - **tqdm** (4.67.3) - Progress bars
 
-### Additional Tools
-Multi-language Support:** Currently optimized for Python; JS/JSON analysis is basic
-- **Timeout:** 15-second max execution per exploit
-- **Dangerous Function Detection:** Limited to predefined list in sinks_extractor.py
-- **Repository Scanning:** Pattern matching limited to common file extensions (.py, .js, .json, .env)
-- **Patch Retry Limit:** Maximum 3 iterative patch attempts before requiring human intervention
-- **Single Exploit per Vulnerability:** Generates one PoE script per vulnerability type
-```bash
-pip install -r requirements.txt
-```
-Multi-language support (JavaScript, Java, Go, C/C++)
-- [ ] Distributed sandbox execution across multiple containers
-- [ ] Web UI dashboard for real-time monitoring
-- [ ] CI/CD pipeline integration (GitHub Actions, GitLab CI)
-- [ ] Vulnerability database integration (CVE mapping)
-- [ ] Machine learning-based pattern dete (e.g., add to `sinks_extractor.py`)
-2. Add detection patterns to analysis prompt in `main.py`
-3. Update response schemas in `main.py`
-4. Test with new sample files in `test_files/`
-
-### Extending AI Agents
-
-**Modify API Connectors** (`orchestrator/agents.py`):
-```python
-def call_new_agent_api(parameters):
-    url = "http://127.0.0.1:8000/new_endpoint"
-    payload = {...}
-    response = requests.post(url, json=payload)
-    # Add error handling
-    return response.json()
-```
-
-**Update Pipeline Logic** (`orchestrator/pipeline.py`):
-```python
-# Add new phase in run_autonomous_pipeline()
-new_agent_results = call_new_agent_api(...)
-```
-
-**Modify Prompt Templates** (`main.py`):
-```python
-PROMPTS = {
-    "analyze": "...",
-    "generate_poe": "...",
-    "generate_patch": "...",
-    "verify": "...",
-    "new_agent": "..."  # Add new prompt
-}
-```
-
-### Working with the Modular Structure
-
-The orchestrator package is designed for easy maintenance:
-
-```python
-# Import the main functions
-from orchestrator import run_autonomous_pipeline, scan_entire_repository
-
-# Or import specific components
-from orchestrator.agents import call_auditor_api, call_red_team_api
-from orchestrator.utils import extract_ast_context, is_critical_finding
-from orchestrator.scanner import scan_entire_repository   "verify": "..."
-}
-```
-
-## Known Limitations
-
-- **Hybrid Mocking:** AST analyzer, Red Team, and Blue Team use mocks; Auditor uses real API
-- **Multi-language Support:** Currently optimized for Python; JS/JSON analysis is basic
-- **Timeout:** 15-second max execution per exploit
-- **Cache Management:** Cache is runtime-only (no persistent storage)
-- **Dangerous Function Detection:** Limited to predefined list in sinks_extractor.py
-- **Repository Scanning:** Pattern matching limited to common file extensions
+### Frontend Dependencies
+See `frontend/package.json` for full list.
+- **Next.js**
+- **React**
+- **Tailwind CSS**
+- **Shadcn/UI**
 
 ## Future Enhancements
-
-- [ ] Real AST-based vulnerability detection (replace mock_ast_analyzer)
+- [ ] Real AST-based vulnerability detection (improve analyzer.py)
 - [ ] Full AI agent integration for Red Team and Blue Team
-- [ ] Multi-language support (JavaScript, Java, Go)
-- [ ] Distributed sandbox ex2, 2026  
-**Version:** 2.0 (Modular Architecture)
-- [ ] Web UI dashboard
-- [ ] CI/CD pipeline integration
-- [ ] Vulnerability database integration
+- [ ] Multi-language support (JavaScript, Java, Go, C/C++)
+- [ ] Distributed sandbox execution across multiple containers
+- [ ] CI/CD pipeline integration (GitHub Actions, GitLab CI)
+- [ ] Vulnerability database integration (CVE mapping)
 - [ ] Machine learning-based pattern detection
-- [ ] Extended dangerous function library
-- [ ] Configurable sink and source patterns
 
-## Security Considerations
+## Contributing
 
-⚠️ **Warning:** This tool executes potentially malicious code. Always:
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- Run in isolated environments
-- Review generated exploits before execution
-- Never execute on production systems
-- Keep Docker sandbox images updated
 
-## License
-
-[Add your license here]
 
 ## Contributors
 
@@ -524,23 +495,22 @@ For issues and questions, please open an issue in the repository.
 
 ---
 
-**Last Updated:** February 21, 2026
+**Last Updated:** February 22, 2026
 
 ## Recent Changes
-v2.0 - Major Refactoring (February 22, 2026)
 
-**🎉 Orchestrator Modularization**
+**v3.0 - Frontend & Dashboard (February 22, 2026)**
+- **Modern Web Dashboard** with Next.js and Shadcn/UI
+- **Real-time Logs** streaming via SSE
+- **File Upload** and management interface
+- **System monitoring** and health checks
+
+**v2.0 - Orchestrator Modularization (February 22, 2026)**
 - **Complete refactoring** of orchestrator.py into modular package structure
-- Created `orchestrator/` package with 5 specialized modules:
-  - `agents.py` - Agent API connectors (92 lines)
-  - `pipeline.py` - Pipeline logic (122 lines)
-  - `scanner.py` - Repository scanner (70 lines)
-  - `utils.py` - Utility functions (60 lines)
-  - `__init__.py` - Package exports (11 lines)
+- Created `orchestrator/` package with 5 specialized modules
 - **Removed all mocks** - All agents now use real API implementations
 - **Real AST extraction** - Uses actual analyzer.py instead of mock functions
 - **Improved readability** - Reduced from 270+ line monolith to small, focused modules
-- Added comprehensive docstrings for all functions
 
 **✨ New Features**
 - `test_files/ast_test.py` - AST analyzer validation tests
@@ -568,11 +538,4 @@ v2.0 - Major Refactoring (February 22, 2026)
 - AST engine expanded with sinks detection
 - Multiple AI backend support (Kimi, OpenAI, Google Generative AI)
 
-### Dependencie
-### Dependencies Highlights
 
-- **Web Framework:** FastAPI 0.129.0, Uvicorn 0.41.0
-- **Container:** Docker 7.1.0
-- **AST Parsing:** Tree-sitter 0.25.2, Tree-sitter-Python 0.25.0
-- **AI/ML:** OpenAI 2.21.0, Google Generative AI 0.8.6
-- **Utilities:** Pydantic 2.12.5, python-dotenv 1.2.1, requests 2.32.5
