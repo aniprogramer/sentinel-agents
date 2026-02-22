@@ -99,6 +99,13 @@ Sentinel Agents is a multi-agent security system that automatically:
   - `POST /generate_patch` - Generate security patches
   - `POST /verify` - Verify patch effectiveness
 
+### Testing Repository 🧪
+
+For end-to-end testing of the repository scanning capabilities, we use the following vulnerable repository:
+[https://github.com/aniprogramer/testing-repo-sentinal](https://github.com/aniprogramer/testing-repo-sentinal)
+
+This repo contains various vulnerability patterns (SQLi, XSS, Hardcoded Secrets) to validate the scanner's detection accuracy.
+
 #### `orchestrator/` - Modular Security Pipeline Package
 
 The orchestrator has been refactored into a clean, modular package structure for better maintainability and readability:
