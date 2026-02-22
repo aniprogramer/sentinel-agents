@@ -1,31 +1,22 @@
 import os
 import json
-import google.generativeai as genai
+from openai import OpenAI
 from dotenv import load_dotenv
 
 # Force load the .env file from the backend directory
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-if not GEMINI_API_KEY:
-    print("🚨 FATAL ERROR: GEMINI_API_KEY is missing from .env!")
-else:
-    genai.configure(api_key=GEMINI_API_KEY)
+# Initialize the client pointing to Groq's base URL
+# (To use standard OpenAI, just remove the base_url and change the env var to OPENAI_API_KEY)
+client = OpenAI(
+    base_url="https://api.groq.com/openai/v1",
+    api_key=os.getenv("GROQ_API_KEY")
+)
 
 def call_ai(prompt: str, schema: dict, temperature: float = 0.2):
-    """Hits the Gemini API and guarantees JSON output."""
+    """Hits the AI API and guarantees JSON output."""
     try:
-        # We use flash for lightning-fast hackathon responses
-        model = genai.GenerativeModel('gemini-2.5-flash',
-            generation_config={
-                "temperature": temperature,
-                "response_mime_type": "application/json", # Native JSON mode!
-            }
-        )
-
-        # Inject the Pydantic schema into the system prompt
         full_prompt = f"""You are Sentinel, an autonomous AI security auditor.
 You must output ONLY valid JSON that strictly matches this schema:
 {json.dumps(schema)}
@@ -33,10 +24,34 @@ You must output ONLY valid JSON that strictly matches this schema:
 USER PROMPT:
 {prompt}"""
 
-        response = model.generate_content(full_prompt)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile", # Groq's fast Llama 3 model
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": "You are a security auditing AI. Output valid JSON only."},
+                {"role": "user", "content": full_prompt}
+            ],
+            temperature=temperature
+        )
 
-        # Because we forced JSON MIME type, we can just load it directly
-        return json.loads(response.text)
+        return json.loads(response.choices[0].message.content)
 
     except Exception as e:
-        return {"error": f"LLM parsing failed: {str(e)}"}
+        error_msg = str(e)
+        print(f"⚠️ AI API Error: {error_msg}")
+        
+        # Safe fallback data to prevent FastApi from crashing
+        schema_str = str(schema)
+        if "auditor_findings" in schema_str: 
+            return {
+                "auditor_findings": [f"API Error: {error_msg[:50]}..."],
+                "red_team_findings": ["Manual review required."],
+                "severity_score": "INFO",
+                "attack_surface_summary": "Scan bypassed."
+            }
+        elif "exploit_script" in schema_str: 
+            return {"exploit_script": "# Exploit failed.", "execution_instructions": "N/A"}
+        elif "patched_code" in schema_str:   
+            return {"patched_code": "# Patch failed.", "security_principle": "N/A", "explanation": "N/A"}
+        else: 
+            return {"exploit_successful": False, "confidence_score": 0.0, "verdict_reasoning": "Bypassed."}

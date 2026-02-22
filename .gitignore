@@ -83,3 +83,5 @@ poetry.lock
 # Runtime
 *.pid
 *.seed
+scans/
+target_code/
