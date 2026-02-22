@@ -75,4 +75,4 @@ def is_critical_finding(auditor_results):
     Returns:
         bool: True if severity is HIGH or CRITICAL
     """
-    return auditor_results.get("severity_score", "").upper() in ["HIGH", "CRITICAL"]
+    return auditor_results.get("severity_score", "").upper() in ["HIGH", "CRITICAL", "MEDIUM"]

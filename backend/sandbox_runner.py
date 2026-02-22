@@ -7,21 +7,24 @@ CACHE_FILE = "execution_cache.json"
 client = docker.from_env()
 
 if os.path.exists(CACHE_FILE):
-    with open(CACHE_FILE, "r") as f:
+    # Enforce UTF-8 reading
+    with open(CACHE_FILE, "r", encoding="utf-8") as f:
         execution_cache = json.load(f)
 else:
     execution_cache = {}
 
 def get_script_hash(script_content, target_file_path):
     """Hashes the exploit AND the current state of the target code."""
-    with open(target_file_path, "r") as f:
+    # Enforce UTF-8 reading
+    with open(target_file_path, "r", encoding="utf-8") as f:
         target_code = f.read()
     # Combine them so if either changes, the cache invalidates
     combined_state = script_content + target_code
     return hashlib.sha256(combined_state.encode('utf-8')).hexdigest()    
 
 def save_cache():
-    with open(CACHE_FILE, "w") as f:
+    # Enforce UTF-8 writing
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(execution_cache, f, indent=4)
 
 def run_exploit_in_sandbox(script_content, target_file_path):
@@ -40,7 +43,8 @@ def run_exploit_in_sandbox(script_content, target_file_path):
     
     os.makedirs(temp_dir, exist_ok=True)
     
-    with open(temp_path, "w") as f:
+    # Enforce UTF-8 writing
+    with open(temp_path, "w", encoding="utf-8") as f:
         f.write(script_content)
 
     mount_dir = os.path.abspath(os.path.join("..", "target_code"))
@@ -60,16 +64,18 @@ def run_exploit_in_sandbox(script_content, target_file_path):
             remove=True
             # Removed the invalid timeout=15 argument from here!
         )
-        output = container.decode('utf-8')
+        # Use errors='replace' to safely handle weird characters from Docker
+        output = container.decode('utf-8', errors='replace')
         success = True
         
     except docker.errors.ContainerError as e:
         # If it times out, Alpine kills it and throws an error here, which we catch perfectly!
-        output = e.stderr.decode('utf-8') if e.stderr else str(e)
+        output = e.stderr.decode('utf-8', errors='replace') if e.stderr else str(e)
         success = False
     except Exception as e:
         output = f"Execution failed: {str(e)}"
         success = False
+        
     result = {
         "success": success,
         "logs": output
@@ -92,7 +98,8 @@ print('Target directory contents:', os.listdir('/target'))
     
     target_dir = os.path.abspath(os.path.join("..", "target_code"))
     os.makedirs(target_dir, exist_ok=True)
-    with open(os.path.join(target_dir, "sample_vuln.py"), "w") as f:
+    # Enforce UTF-8 writing
+    with open(os.path.join(target_dir, "sample_vuln.py"), "w", encoding="utf-8") as f:
         f.write("print('Vulnerable Code')")
 
     result = run_exploit_in_sandbox(test_script, os.path.join(target_dir, "sample_vuln.py"))
